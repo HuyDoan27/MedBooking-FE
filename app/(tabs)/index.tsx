@@ -1,98 +1,166 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+} from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// Screens
+import HomeScreen from "@/components/view/HomeScreen";
+import SearchResultsScreen from "@/components/view/SearchResultsScreen";
+import AppointmentsScreen from "@/components/view/AppointmentsScreen";
+import MedicalRecordsScreen from "@/components/view/MedicalRecordsScreen";
+import ProfileScreen from "@/components/view/ProfileScreen";
+import LoginScreen from "@/components/view/auth/LoginScreen";
+import RegisterScreen from "@/components/view/auth/RegisterScreen";
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+// Icons
+import { Home, Search, Calendar, FileText, User } from "lucide-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+type Screen = "home" | "search" | "appointments" | "records" | "profile";
+
+export default function Page() {
+  const [currentScreen, setCurrentScreen] = useState<Screen>("home");
+
+  // Auth state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+
+  const handleAuthSuccess = async (data: any) => {
+    if (data?.token) {
+      await AsyncStorage.setItem("token", data.token);
+    }
+    setIsLoggedIn(true);
+  };
+
+  const renderScreen = () => {
+    if (!isLoggedIn) {
+      return authMode === "login" ? (
+        <LoginScreen
+          onSwitchToRegister={() => setAuthMode("register")}
+          onLoginSuccess={handleLoginSuccess}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+      ) : (
+        <RegisterScreen
+          onSwitchToLogin={() => setAuthMode("login")}
+          onRegisterSuccess={handleLoginSuccess}
+        />
+      );
+    }
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    switch (currentScreen) {
+      case "home":
+        return <HomeScreen />;
+      case "search":
+        return <SearchResultsScreen />;
+      case "appointments":
+        return <AppointmentsScreen />;
+      case "records":
+        return <MedicalRecordsScreen />;
+      case "profile":
+        return <ProfileScreen />;
+      default:
+        return <HomeScreen />;
+    }
+  };
+
+  const tabs = [
+    { id: "home" as Screen, label: "Trang chủ", icon: Home },
+    { id: "search" as Screen, label: "Tìm kiếm", icon: Search },
+    { id: "appointments" as Screen, label: "Lịch hẹn", icon: Calendar },
+    { id: "records" as Screen, label: "Hồ sơ", icon: FileText },
+    { id: "profile" as Screen, label: "Cá nhân", icon: User },
+  ];
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem("token");
+      if (token) {
+        setIsLoggedIn(true);
+      }
+    };
+    checkToken();
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Main Content */}
+      <View style={styles.main}>{renderScreen()}</View>
+
+      {/* Bottom Navigation chỉ hiện khi đã login */}
+      {isLoggedIn && (
+        <View style={styles.bottomNav}>
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = currentScreen === tab.id;
+
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                onPress={() => setCurrentScreen(tab.id)}
+                style={[styles.tabButton, isActive && styles.tabActive]}
+              >
+                <Icon size={22} color={isActive ? "#0891b2" : "#6b7280"} />
+                <Text
+                  style={[styles.tabLabel, isActive && styles.tabLabelActive]}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#f9fafb", // bg-gray-50
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  main: {
+    flex: 1,
+    paddingBottom: 60, // chừa chỗ cho bottom nav
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
+  bottomNav: {
+    position: "absolute",
     bottom: 0,
     left: 0,
-    position: 'absolute',
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  tabActive: {
+    backgroundColor: "#ecfeff", // bg-cyan-50
+  },
+  tabLabel: {
+    fontSize: 12,
+    color: "#6b7280", // text-gray-500
+    marginTop: 2,
+    fontWeight: "500",
+  },
+  tabLabelActive: {
+    color: "#0891b2", // text-cyan-600
   },
 });
