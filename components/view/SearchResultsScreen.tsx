@@ -1,47 +1,59 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  SafeAreaView,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  Image,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  ActivityIndicator,
-  Alert,
+  View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { getRandomDoctors, getDoctors } from "../../services/DoctorService"; // Adjust path to your service file
-
-const specialties = ["Tất cả", "Nội khoa", "Tim mạch", "Da liễu", "Nhi khoa"];
+import {
+  getDoctors,
+  getRandomDoctors,
+  getDoctorsBySpecialty,
+} from "../../services/DoctorService";
+import { getSpecialty } from "../../services/SpecialtyService";
 
 export default function EnhancedDoctorSearch() {
+  const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSpecialty, setSelectedSpecialty] = useState("Tất cả");
+  const [specialties, setSpecialties] = useState([
+    { _id: "all", name: "Tất cả" },
+  ]);
+  const [selectedSpecialty, setSelectedSpecialty] = useState("all");
   const [favorites, setFavorites] = useState(new Set());
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Fetch specialties from API
+  useEffect(() => {
+    const fetchSpecialties = async () => {
+      try {
+        const res = await getSpecialty();
+        if (Array.isArray(res.data.data)) {
+          setSpecialties([{ _id: "all", name: "Tất cả" }, ...res.data.data]);
+        } else {
+          setSpecialties([{ _id: "all", name: "Tất cả" }]);
+        }
+      } catch {
+        setSpecialties([{ _id: "all", name: "Tất cả" }]);
+      }
+    };
+    fetchSpecialties();
+  }, []);
 
-  const fetchDoctors = async (query = "", specialty = "Tất cả") => {
+  // Lấy ngẫu nhiên bác sĩ khi vào màn hình
+  const fetchRandomDoctors = async () => {
     setLoading(true);
     setError(null);
     try {
-      const hasSearchParams = query.trim() || specialty !== "Tất cả";
-
-      if (hasSearchParams) {
-        const params = {};
-        if (query.trim()) params.name = query.trim(); 
-        if (specialty !== "Tất cả") params.specialty = specialty;
-
-        const response = await getDoctors(params);
-        setDoctors(response.data);
-      } else {
-        const response = await getRandomDoctors();
-        setDoctors(response.data);
-      }
+      const response = await getRandomDoctors();
+      setDoctors(response.data);
     } catch (err) {
       setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
       Alert.alert("Lỗi", "Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
@@ -50,14 +62,61 @@ export default function EnhancedDoctorSearch() {
     }
   };
 
-  // Fetch initial data
+  // Lọc theo chuyên khoa
+  const fetchDoctorsBySpecialty = async (specialtyId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getDoctorsBySpecialty({ specialtyId });
+      setDoctors(response.data.data || []);
+    } catch (err) {
+      setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
+      Alert.alert("Lỗi", "Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Tìm kiếm theo tên bác sĩ
+  const fetchDoctorsByName = async (name) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getDoctors({ name });
+      setDoctors(response.data.data || []);
+    } catch (err) {
+      setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
+      Alert.alert("Lỗi", "Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Khi vào màn hình, gọi getRandomDoctors
   useEffect(() => {
-    fetchDoctors(searchQuery, selectedSpecialty);
-  }, [selectedSpecialty]);
+    fetchRandomDoctors();
+  }, []);
+
+  // Khi filter chuyên khoa
+  useEffect(() => {
+    if (!isSearching) {
+      if (selectedSpecialty === "all") {
+        fetchRandomDoctors();
+      } else {
+        fetchDoctorsBySpecialty(selectedSpecialty);
+      }
+    }
+  }, [selectedSpecialty, isSearching]);
 
   // Handle search
   const handleSearch = () => {
-    fetchDoctors(searchQuery, selectedSpecialty);
+    if (searchQuery.trim()) {
+      setIsSearching(true);
+      fetchDoctorsByName(searchQuery.trim());
+    } else {
+      setIsSearching(false);
+      fetchRandomDoctors();
+    }
   };
 
   const toggleFavorite = (doctorId) => {
@@ -72,29 +131,33 @@ export default function EnhancedDoctorSearch() {
 
   const renderSpecialtyTab = ({ item }) => (
     <TouchableOpacity
-      onPress={() => setSelectedSpecialty(item)}
+      onPress={() => {
+        setSelectedSpecialty(item._id);
+        setSearchQuery("");
+        setIsSearching(false);
+      }}
       style={{
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 20,
         marginRight: 8,
         backgroundColor:
-          selectedSpecialty === item ? "white" : "rgba(255,255,255,0.15)",
-        shadowColor: selectedSpecialty === item ? "#000" : "transparent",
+          selectedSpecialty === item._id ? "white" : "rgba(255,255,255,0.15)",
+        shadowColor: selectedSpecialty === item._id ? "#000" : "transparent",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        elevation: selectedSpecialty === item ? 2 : 0,
+        elevation: selectedSpecialty === item._id ? 2 : 0,
       }}
     >
       <Text
         style={{
-          color: selectedSpecialty === item ? "#2563eb" : "white",
+          color: selectedSpecialty === item._id ? "#2563eb" : "white",
           fontSize: 14,
-          fontWeight: selectedSpecialty === item ? "600" : "500",
+          fontWeight: selectedSpecialty === item._id ? "600" : "500",
         }}
       >
-        {item}
+        {item.name}
       </Text>
     </TouchableOpacity>
   );
@@ -152,40 +215,6 @@ export default function EnhancedDoctorSearch() {
                 borderColor: "#dbeafe",
               }}
             />
-            {item.verified && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: -4,
-                  right: -4,
-                  width: 22,
-                  height: 22,
-                  backgroundColor: "#2563eb",
-                  borderRadius: 11,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderWidth: 2,
-                  borderColor: "white",
-                }}
-              >
-                <Ionicons name="checkmark" size={14} color="white" />
-              </View>
-            )}
-            {item.isOnline && (
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: -2,
-                  right: -2,
-                  width: 18,
-                  height: 18,
-                  backgroundColor: "#10b981",
-                  borderRadius: 9,
-                  borderWidth: 3,
-                  borderColor: "white",
-                }}
-              />
-            )}
           </View>
 
           <View style={{ flex: 1 }}>
@@ -206,7 +235,7 @@ export default function EnhancedDoctorSearch() {
                     marginBottom: 6,
                   }}
                 >
-                  {item.name}
+                  {item.fullName}
                 </Text>
                 <View
                   style={{
@@ -232,7 +261,7 @@ export default function EnhancedDoctorSearch() {
                         fontWeight: "600",
                       }}
                     >
-                      {item.specialty}
+                      {item.specialty?.name}
                     </Text>
                   </View>
                   <Text
@@ -242,10 +271,26 @@ export default function EnhancedDoctorSearch() {
                       fontWeight: "500",
                     }}
                   >
-                    • {item.experience}
+                    • {item.experience} Kinh nghiệm
                   </Text>
                 </View>
               </View>
+
+              <TouchableOpacity
+                onPress={() => toggleFavorite(item._id)}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  marginRight: 8,
+                  backgroundColor: "#f3f4f6",
+                }}
+              >
+                <Ionicons
+                  name={"eye"}
+                  size={20}
+                  color={"#9ca3af"}
+                />
+              </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() => toggleFavorite(item._id)}
@@ -263,22 +308,6 @@ export default function EnhancedDoctorSearch() {
                   color={favorites.has(item.id) ? "#ef4444" : "#9ca3af"}
                 />
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => toggleFavorite(item._id)}
-                style={{
-                  padding: 8,
-                  borderRadius: 20,
-                  backgroundColor: favorites.has(item._id)
-                    ? "#fee2e2"
-                    : "#f3f4f6",
-                }}
-              >
-                <Ionicons
-                  name={favorites.has(item._id) ? "heart" : "heart-outline"}
-                  size={20}
-                  color={favorites.has(item._id) ? "#ef4444" : "#9ca3af"}
-                />
-              </TouchableOpacity>
             </View>
 
             <View
@@ -288,95 +317,18 @@ export default function EnhancedDoctorSearch() {
                 marginBottom: 12,
               }}
             >
-              <Ionicons name="location-outline" size={16} color="#6b7280" />
+              <Ionicons name="home" size={16} color="#6b7280" />
               <Text
                 style={{
                   color: "#6b7280",
                   fontSize: 13,
-                  marginLeft: 6,
+                  marginLeft: 16,
                   flex: 1,
                 }}
                 numberOfLines={2}
               >
-                {item.clinic}
+                {item.clinicName}
               </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <View style={{ flexDirection: "row", marginRight: 8 }}>
-                {[...Array(5)].map((_, i) => (
-                  <Ionicons
-                    key={i}
-                    name="star"
-                    size={16}
-                    color={i < Math.floor(item.rating) ? "#f59e0b" : "#e5e7eb"}
-                  />
-                ))}
-              </View>
-              <Text
-                style={{
-                  fontWeight: "700",
-                  color: "#111827",
-                  fontSize: 15,
-                  marginRight: 4,
-                }}
-              >
-                {item.rating}
-              </Text>
-              <Text style={{ color: "#6b7280", fontSize: 13 }}>
-                ({item.reviews} đánh giá)
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
-            >
-              <Ionicons name="globe-outline" size={16} color="#6b7280" />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginLeft: 8, flex: 1 }}
-                contentContainerStyle={{ alignItems: "center" }}
-              >
-                <View style={{ flexDirection: "row" }}>
-                  {(Array.isArray(item.languages) ? item.languages : []).map(
-                    (lang) => (
-                      <View
-                        key={lang}
-                        style={{
-                          backgroundColor: "#f8fafc",
-                          borderWidth: 1,
-                          borderColor: "#e2e8f0",
-                          paddingHorizontal: 8,
-                          paddingVertical: 4,
-                          borderRadius: 12,
-                          marginRight: 6,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: "#64748b",
-                            fontSize: 11,
-                            fontWeight: "500",
-                          }}
-                        >
-                          {lang}
-                        </Text>
-                      </View>
-                    )
-                  )}
-                </View>
-              </ScrollView>
             </View>
 
             <View
@@ -418,7 +370,7 @@ export default function EnhancedDoctorSearch() {
                       fontWeight: "500",
                     }}
                   >
-                    {item.distance}
+                    Địa chỉ phòng khám : {item.clinicAddress}
                   </Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -450,38 +402,39 @@ export default function EnhancedDoctorSearch() {
               </Text>
             </View>
 
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <View style={{ flexDirection: "row", marginRight: 8 }}>
+                {[...Array(5)].map((_, i) => (
+                  <Ionicons
+                    key={i}
+                    name="star"
+                    size={16}
+                    color={i < Math.floor(item.rating) ? "#f59e0b" : "#e5e7eb"}
+                  />
+                ))}
+              </View>
+              <Text
+                style={{
+                  fontWeight: "700",
+                  color: "#111827",
+                  fontSize: 15,
+                  marginRight: 4,
+                }}
+              >
+                {item.rating}
+              </Text>
+              <Text style={{ color: "#6b7280", fontSize: 13 }}>
+                ({item.reviews} đánh giá)
+              </Text>
+            </View>
+
             <View style={{ flexDirection: "row", gap: 10 }}>
-              {Array.isArray(item.consultationType) &&
-                item.consultationType.includes("Video call") && (
-                  <TouchableOpacity
-                    style={{
-                      flex: 1,
-                      backgroundColor: "#2563eb",
-                      paddingVertical: 14,
-                      borderRadius: 14,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      shadowColor: "#2563eb",
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 4,
-                      elevation: 3,
-                    }}
-                  >
-                    <Ionicons name="videocam" size={18} color="white" />
-                    <Text
-                      style={{
-                        color: "white",
-                        fontWeight: "600",
-                        marginLeft: 8,
-                        fontSize: 14,
-                      }}
-                    >
-                      Tư vấn online
-                    </Text>
-                  </TouchableOpacity>
-                )}
               <TouchableOpacity
                 style={{
                   flex: 1,
@@ -590,7 +543,7 @@ export default function EnhancedDoctorSearch() {
         <FlatList
           data={specialties}
           renderItem={renderSpecialtyTab}
-          keyExtractor={(item) => item}
+          keyExtractor={(item) => item._id}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingRight: 16 }}
@@ -654,7 +607,13 @@ export default function EnhancedDoctorSearch() {
             Đã xảy ra lỗi: {error}
           </Text>
           <TouchableOpacity
-            onPress={() => fetchDoctors(searchQuery, selectedSpecialty)}
+            onPress={() => {
+              if (searchQuery.trim()) {
+                fetchDoctorsByName(searchQuery.trim());
+              } else {
+                fetchRandomDoctors();
+              }
+            }}
             style={{
               marginTop: 16,
               backgroundColor: "#2563eb",
@@ -694,7 +653,7 @@ export default function EnhancedDoctorSearch() {
               shadowRadius: 8,
               elevation: 4,
             }}
-            onPress={() => fetchDoctors("", "Tất cả")}
+            onPress={fetchRandomDoctors}
           >
             <Text style={{ color: "#374151", fontWeight: "600", fontSize: 16 }}>
               Xem thêm kết quả
