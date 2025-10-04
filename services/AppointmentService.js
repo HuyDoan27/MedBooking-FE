@@ -12,9 +12,20 @@ const api = axios.create({
   timeout: 5000,
 });
 
+// Lấy danh sách appointment theo doctorId kèm filter
+export const getAppointmentsByDoctor = (
+  userId,
+  { date, status, patientName } = {}
+) => {
+  return api.get(`/appointments/${userId}`, {
+    params: { date, status, patientName },
+  });
+};
+
+
 // Lấy danh sách lịch hẹn của user
 export const getUserAppointments = async (userId, params = {}) => {
-  const token = await AsyncStorage.getItem("token"); // lấy token đã lưu khi login
+  const token = await AsyncStorage.getItem("token"); 
 
   return api.get(`/appointments/user/${userId}`, {
     params,
@@ -29,7 +40,6 @@ export const getAppointmentById = (appointmentId, userId) =>
   api.get(`/appointments/${appointmentId}`, { params: { userId } });
 
 // Tạo lịch hẹn mới
-// client/api/appointment.js
 export const createAppointment = (data, token) =>
   api.post("/appointments", data, {
     headers: {

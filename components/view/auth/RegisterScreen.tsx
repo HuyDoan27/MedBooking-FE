@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "expo-router";
 import {
   View,
   Text,
@@ -6,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Modal,
 } from "react-native";
 import {
   Eye,
@@ -19,10 +21,7 @@ import {
 } from "lucide-react-native";
 import { register } from "@/services/AuthService";
 
-export default function RegisterScreen({
-  onSwitchToLogin,
-  onRegisterSuccess,
-}: any) {
+export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,8 +32,13 @@ export default function RegisterScreen({
     confirmPassword: "",
     agreeTerms: false,
   });
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const router = useRouter();
 
   const handleRegister = async () => {
+    setAttemptedSubmit(true);
+
     if (!formData.agreeTerms) {
       alert("Bạn cần đồng ý với Điều khoản và Chính sách trước khi đăng ký.");
       return;
@@ -56,11 +60,8 @@ export default function RegisterScreen({
       const res = await register(payload);
       console.log("Register success:", res);
 
-      if (onRegisterSuccess) {
-        onRegisterSuccess(res);
-      }
-
-      alert("Đăng ký thành công!");
+      // show modal and auto redirect
+      setShowSuccessModal(true);
     } catch (err: any) {
       console.error("Register error:", err);
       const backendMsg = err?.response?.data?.message;
@@ -74,13 +75,27 @@ export default function RegisterScreen({
   };
 
   const isFormValid =
-    formData.fullName &&
-    formData.email &&
-    formData.phoneNumber &&
-    formData.password &&
-    formData.confirmPassword &&
+    Boolean(formData.fullName?.trim()) &&
+    Boolean(formData.email?.trim()) &&
+    Boolean(formData.phoneNumber?.trim()) &&
+    Boolean(formData.password) &&
+    Boolean(formData.confirmPassword) &&
     formData.password === formData.confirmPassword &&
     formData.agreeTerms;
+
+  useEffect(() => {
+    let t: any;
+    if (showSuccessModal) {
+      t = setTimeout(() => {
+        setShowSuccessModal(false);
+        router.push("/");
+      }, 5000);
+    }
+
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [showSuccessModal, router]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -94,10 +109,7 @@ export default function RegisterScreen({
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Đăng ký</Text>
-        <Text style={styles.cardSubtitle}>
-          Tham gia cùng chúng tôi ngay hôm nay!
-        </Text>
+        <Text style={styles.cardTitle}>Đăng ký người dùng</Text>
 
         {/* Full name */}
         <View style={styles.inputGroup}>
@@ -105,12 +117,15 @@ export default function RegisterScreen({
           <View style={styles.inputWrapper}>
             <User size={20} color="#9ca3af" style={styles.iconLeft} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, attemptedSubmit && !formData.fullName?.trim() && styles.invalidInput]}
               placeholder=""
               value={formData.fullName}
               onChangeText={(val) => handleInputChange("fullName", val)}
             />
           </View>
+          {attemptedSubmit && !formData.fullName?.trim() && (
+            <Text style={styles.errorText}>Họ và tên là bắt buộc.</Text>
+          )}
         </View>
 
         {/* Email */}
@@ -119,7 +134,7 @@ export default function RegisterScreen({
           <View style={styles.inputWrapper}>
             <Mail size={20} color="#9ca3af" style={styles.iconLeft} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, attemptedSubmit && !formData.email?.trim() && styles.invalidInput]}
               placeholder=""
               value={formData.email}
               onChangeText={(val) => handleInputChange("email", val)}
@@ -127,6 +142,9 @@ export default function RegisterScreen({
               autoCapitalize="none"
             />
           </View>
+          {attemptedSubmit && !formData.email?.trim() && (
+            <Text style={styles.errorText}>Email là bắt buộc.</Text>
+          )}
         </View>
 
         {/* Phone */}
@@ -135,13 +153,16 @@ export default function RegisterScreen({
           <View style={styles.inputWrapper}>
             <Phone size={20} color="#9ca3af" style={styles.iconLeft} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, attemptedSubmit && !formData.phoneNumber?.trim() && styles.invalidInput]}
               placeholder="0901 234 567"
               value={formData.phoneNumber}
               onChangeText={(val) => handleInputChange("phoneNumber", val)}
               keyboardType="phone-pad"
             />
           </View>
+          {attemptedSubmit && !formData.phoneNumber?.trim() && (
+            <Text style={styles.errorText}>Số điện thoại là bắt buộc.</Text>
+          )}
         </View>
 
         {/* Password */}
@@ -150,7 +171,7 @@ export default function RegisterScreen({
           <View style={styles.inputWrapper}>
             <Lock size={20} color="#9ca3af" style={styles.iconLeft} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, attemptedSubmit && !formData.password && styles.invalidInput]}
               placeholder="Tối thiểu 8 ký tự"
               value={formData.password}
               onChangeText={(val) => handleInputChange("password", val)}
@@ -167,6 +188,9 @@ export default function RegisterScreen({
               )}
             </TouchableOpacity>
           </View>
+          {attemptedSubmit && !formData.password && (
+            <Text style={styles.errorText}>Mật khẩu là bắt buộc.</Text>
+          )}
         </View>
 
         {/* Confirm Password */}
@@ -192,10 +216,9 @@ export default function RegisterScreen({
               )}
             </TouchableOpacity>
           </View>
-          {formData.confirmPassword &&
-            formData.password !== formData.confirmPassword && (
-              <Text style={styles.errorText}>Mật khẩu không khớp</Text>
-            )}
+          {Boolean(formData.confirmPassword && formData.password !== formData.confirmPassword) && (
+            <Text style={styles.errorText}>Mật khẩu không khớp</Text>
+          )}
         </View>
 
         {/* Terms */}
@@ -206,6 +229,7 @@ export default function RegisterScreen({
           <View
             style={[
               styles.checkbox,
+              attemptedSubmit && !formData.agreeTerms && styles.invalidCheckbox,
               formData.agreeTerms && styles.checkboxChecked,
             ]}
           />
@@ -214,36 +238,53 @@ export default function RegisterScreen({
             và <Text style={styles.link}>Chính sách bảo mật</Text>
           </Text>
         </TouchableOpacity>
+        {attemptedSubmit && !formData.agreeTerms && (
+          <Text style={styles.errorText}>Bạn cần đồng ý Điều khoản để tiếp tục.</Text>
+        )}
 
         {/* Register button */}
         <TouchableOpacity
           style={[styles.button, !isFormValid && styles.buttonDisabled]}
-          onPress={handleRegister}
+          onPress={() => {
+            setAttemptedSubmit(true);
+            if (isFormValid) handleRegister();
+          }}
           disabled={!isFormValid}
         >
           <Text style={styles.buttonText}>Tạo tài khoản</Text>
           <ArrowRight size={18} color="#fff" style={{ marginLeft: 8 }} />
         </TouchableOpacity>
+      </View>
 
-        {/* Divider */}
-        <View style={styles.dividerRow}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>Hoặc</Text>
-          <View style={styles.divider} />
+      {/* Success modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowSuccessModal(false);
+          router.push("/");
+        }}
+      >
+        <View style={styles.successOverlay}>
+          <View style={styles.successModal}>
+            <Text style={styles.successTitle}>Đăng ký thành công</Text>
+            <Text style={styles.successMessage}>
+              Tài khoản của bạn đã được tạo. Bạn sẽ được chuyển về trang đăng
+              nhập trong vài giây.
+            </Text>
+            <TouchableOpacity
+              style={styles.successButton}
+              onPress={() => {
+                setShowSuccessModal(false);
+                router.push("/");
+              }}
+            >
+              <Text style={styles.successButtonText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Social Register */}
-      </View>
-
-      {/* Login link */}
-      <View style={styles.signup}>
-        <Text style={{ color: "#4b5563" }}>
-          Đã có tài khoản?{" "}
-          <Text style={styles.link} onPress={onSwitchToLogin}>
-            Đăng nhập ngay
-          </Text>
-        </Text>
-      </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -256,7 +297,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   header: {
-    marginTop: 40,
     marginBottom: 24,
     alignItems: "center",
   },
@@ -283,6 +323,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   cardTitle: {
+    textAlign: "center",
     fontSize: 20,
     fontWeight: "bold",
     color: "#111827",
@@ -366,4 +407,50 @@ const styles = StyleSheet.create({
 
   signup: { marginTop: 24, alignItems: "center" },
   link: { color: "#2563eb", fontWeight: "600" },
+  successOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  successModal: {
+    width: "90%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  successTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#064e3b",
+    marginBottom: 8,
+  },
+  successMessage: {
+    fontSize: 14,
+    color: "#374151",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  successButton: {
+    backgroundColor: "#10b981",
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  successButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  invalidInput: {
+    borderColor: "#ef4444",
+  },
+  invalidCheckbox: {
+    borderColor: "#ef4444",
+    backgroundColor: "#fee2e2",
+  },
 });

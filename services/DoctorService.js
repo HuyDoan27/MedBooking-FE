@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // ⚠️ BASE_URL cần đổi theo môi trường
-const BASE_URL = "http://localhost:5000/api"; 
+const BASE_URL = "http://localhost:5000/api";
 // - Android Emulator: 10.0.2.2
 // - iOS Simulator: localhost
 // - Device thật: IP máy tính (vd: http://192.168.1.100:5000)
@@ -21,4 +21,18 @@ export const getDoctors = (params) => api.get("/doctors", { params });
 export const getDoctorById = (id) => api.get(`/doctors/${id}`);
 
 // Lấy danh sách bác sĩ theo chuyên khoa (filter)
-export const getDoctorsBySpecialty = (params) => api.get("/doctors/specialty", { params });
+export const getDoctorsBySpecialty = (params) =>
+  api.get("/doctors/specialty", { params });
+
+// Tạo bác sĩ (hỗ trợ JSON hoặc FormData cho upload)
+export const createDoctor = (body) => {
+  // More robust FormData detection for React Native environments
+  const isFormData = body && (typeof body.append === 'function' || body instanceof FormData);
+
+  if (isFormData) {
+    // Let axios set the multipart boundary header automatically; don't force Content-Type
+    return api.post('/doctors', body, { headers: { Accept: 'application/json' } });
+  }
+
+  return api.post('/doctors', body, { headers: { 'Content-Type': 'application/json' } });
+};

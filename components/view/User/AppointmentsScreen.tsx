@@ -1,4 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,17 +16,14 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {
-  getUserAppointments,
   createAppointment,
-} from "../../services/AppointmentService";
+  getUserAppointments,
+} from "../../../services/AppointmentService";
 import {
   getClinics,
   getSpecialtiesByClinic,
-} from "../../services/ClinicService";
-import { getDoctorsBySpecialty } from "../../services/DoctorService";
-import { getSpecialty } from "../../services/SpecialtyService";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
+} from "../../../services/ClinicService";
+import { getDoctorsBySpecialty } from "../../../services/DoctorService";
 
 const getStatusConfig = (status) => {
   switch (status) {

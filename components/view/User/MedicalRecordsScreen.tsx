@@ -14,7 +14,6 @@ import {
 } from "lucide-react-native"
 import React, { useMemo, useState } from "react"
 import {
-  Dimensions,
   Modal,
   RefreshControl,
   ScrollView,
@@ -25,7 +24,6 @@ import {
   View
 } from "react-native"
 
-const { width } = Dimensions.get('window')
 
 type TabType = "records" | "prescriptions" | "tests"
 

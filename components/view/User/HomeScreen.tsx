@@ -1,14 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
-// import { createUser, getUsers } from "../../services/UserService";
-import { Doctor, QuickAction, Specialty } from "../types";
-import { DoctorCard } from "./components/HomeScreen/DoctorCard";
-import { EmergencyCard } from "./components/HomeScreen/EmergencyCard";
-import { Header } from "./components/HomeScreen/Header";
-import { QuickActions } from "./components/HomeScreen/QuickActions";
-import { SearchBar } from "./components/HomeScreen/SearchBar";
-import { SectionHeader } from "./components/HomeScreen/SectionHeader";
-import { SpecialtyCard } from "./components/HomeScreen/SpecialtyCard";
+import { Doctor, QuickAction, Specialty } from "../../types";
+import { DoctorCard } from "./components/DoctorCard";
+import { EmergencyCard } from "./components/EmergencyCard";
+import { Header } from "./components/Header";
+import { QuickActions } from "./components/QuickActions";
+import { SectionHeader } from "./components/SectionHeader";
+import { SpecialtyCard } from "./components/SpecialtyCard";
 
 const specialties: Specialty[] = [
   { name: "Nội khoa", color: "#DBEAFE", textColor: "#2563EB" },
@@ -30,7 +28,7 @@ const nearbyDoctors: Doctor[] = [
     distance: "0.8 km",
     price: "200.000đ",
     nextSlot: "14:30",
-    image: "https://example.com/doctor1.jpg",
+    image: "",
     isOnline: true,
   },
   {
@@ -43,7 +41,7 @@ const nearbyDoctors: Doctor[] = [
     distance: "1.2 km",
     price: "150.000đ",
     nextSlot: "15:00",
-    image: "https://example.com/doctor2.jpg",
+    image: "",
     isOnline: false,
   },
   {
@@ -56,7 +54,7 @@ const nearbyDoctors: Doctor[] = [
     distance: "2.1 km",
     price: "300.000đ",
     nextSlot: "16:15",
-    image: "https://example.com/doctor3.jpg",
+    image: "",
     isOnline: true,
   },
 ];

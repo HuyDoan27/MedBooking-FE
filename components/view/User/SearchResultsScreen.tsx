@@ -16,8 +16,8 @@ import {
   getDoctors,
   getRandomDoctors,
   getDoctorsBySpecialty,
-} from "../../services/DoctorService";
-import { getSpecialty } from "../../services/SpecialtyService";
+} from "../../../services/DoctorService";
+import { getSpecialty } from "../../../services/SpecialtyService";
 
 export default function EnhancedDoctorSearch() {
   const [isSearching, setIsSearching] = useState(false);
@@ -53,9 +53,8 @@ export default function EnhancedDoctorSearch() {
     setError(null);
     try {
       const response = await getRandomDoctors();
-      setDoctors(response.data);
+      setDoctors(response.data.data || []);
     } catch (err) {
-      setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
       Alert.alert("Lỗi", "Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
@@ -70,7 +69,6 @@ export default function EnhancedDoctorSearch() {
       const response = await getDoctorsBySpecialty({ specialtyId });
       setDoctors(response.data.data || []);
     } catch (err) {
-      setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
       Alert.alert("Lỗi", "Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
@@ -85,7 +83,6 @@ export default function EnhancedDoctorSearch() {
       const response = await getDoctors({ name });
       setDoctors(response.data.data || []);
     } catch (err) {
-      setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
       Alert.alert("Lỗi", "Không thể tải danh sách bác sĩ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
@@ -285,11 +282,7 @@ export default function EnhancedDoctorSearch() {
                   backgroundColor: "#f3f4f6",
                 }}
               >
-                <Ionicons
-                  name={"eye"}
-                  size={20}
-                  color={"#9ca3af"}
-                />
+                <Ionicons name={"eye"} size={20} color={"#9ca3af"} />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -638,7 +631,7 @@ export default function EnhancedDoctorSearch() {
       )}
 
       {!loading && !error && doctors.length > 0 && (
-        <View style={{ position: "absolute", bottom: 30, left: 16, right: 16 }}>
+        <View>
           <TouchableOpacity
             style={{
               backgroundColor: "white",
@@ -656,7 +649,7 @@ export default function EnhancedDoctorSearch() {
             onPress={fetchRandomDoctors}
           >
             <Text style={{ color: "#374151", fontWeight: "600", fontSize: 16 }}>
-              Xem thêm kết quả
+              Xem thêm kết quả khác
             </Text>
           </TouchableOpacity>
         </View>
