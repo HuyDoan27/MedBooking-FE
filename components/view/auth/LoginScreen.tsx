@@ -140,28 +140,6 @@ export default function LoginScreen({
           <Text style={styles.buttonText}>Đăng nhập</Text>
           <ArrowRight size={18} color="#fff" style={{ marginLeft: 8 }} />
         </TouchableOpacity>
-
-        {/* Divider */}
-        <View style={styles.dividerRow}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>Hoặc</Text>
-          <View style={styles.divider} />
-        </View>
-
-        {/* Social login */}
-        <TouchableOpacity style={styles.socialButton}>
-          <View
-            style={[
-              styles.socialIcon,
-              {
-                backgroundColor: "linear-gradient(to right, #3b82f6, #ef4444)",
-              },
-            ]}
-          >
-            <Text style={styles.socialIconText}>G</Text>
-          </View>
-          <Text style={styles.socialText}>Đăng nhập với Google</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Sign up */}

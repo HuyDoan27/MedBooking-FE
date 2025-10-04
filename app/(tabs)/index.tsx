@@ -7,18 +7,22 @@ import {
   SafeAreaView,
 } from "react-native";
 
-// Screens
-import HomeScreen from "@/components/view/HomeScreen";
-import SearchResultsScreen from "@/components/view/SearchResultsScreen";
-import AppointmentsScreen from "@/components/view/AppointmentsScreen";
-import MedicalRecordsScreen from "@/components/view/MedicalRecordsScreen";
-import ProfileScreen from "@/components/view/ProfileScreen";
+// User
+import HomeScreen from "@/components/view/User/HomeScreen";
+import SearchResultsScreen from "@/components/view/User/SearchResultsScreen";
+import AppointmentsScreen from "@/components/view/User/AppointmentsScreen";
+import MedicalRecordsScreen from "@/components/view/User/MedicalRecordsScreen";
+import ProfileScreen from "@/components/view/User/ProfileScreen";
 import LoginScreen from "@/components/view/auth/LoginScreen";
-import RegisterScreen from "@/components/view/auth/RegisterScreen";
+
+//Doctor
+import DoctorHomeScreen from "@/components/view/Doctor/DoctorHomeScreen";
+import DoctorScheduleScreen from "@/components/view/Doctor/DoctorScheduleScreen";
 
 // Icons
 import { Home, Search, Calendar, FileText, User } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import RegisterContainer from "@/components/view/auth/RegisterContainer";
 
 type Screen = "home" | "search" | "appointments" | "records" | "profile";
 
@@ -28,17 +32,21 @@ export default function Page() {
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [role, setRole] = useState<"user" | "doctor" | "admin" | null>(null);
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
   };
 
-  const handleAuthSuccess = async (data: any) => {
-    if (data?.token) {
-      await AsyncStorage.setItem("token", data.token);
-    }
-    setIsLoggedIn(true);
-  };
+  // const handleAuthSuccess = async (data: any) => {
+  //   if (data?.token) {
+  //     await AsyncStorage.setItem("token", data.token);
+  //   }
+  //   if (data?.role) {
+  //     await AsyncStorage.setItem("role", data.role);
+  //   }
+  //   setIsLoggedIn(true);
+  // };
 
   const renderScreen = () => {
     if (!isLoggedIn) {
@@ -48,45 +56,98 @@ export default function Page() {
           onLoginSuccess={handleLoginSuccess}
         />
       ) : (
-        <RegisterScreen
-          onSwitchToLogin={() => setAuthMode("login")}
-          onRegisterSuccess={handleLoginSuccess}
-        />
+        <RegisterContainer onSwitchToLogin={() => setAuthMode("login")} />
       );
     }
 
-    switch (currentScreen) {
-      case "home":
-        return <HomeScreen />;
-      case "search":
-        return <SearchResultsScreen />;
-      case "appointments":
-        return <AppointmentsScreen />;
-      case "records":
-        return <MedicalRecordsScreen />;
-      case "profile":
-        return <ProfileScreen />;
-      default:
-        return <HomeScreen />;
+    if (role === "user") {
+      switch (currentScreen) {
+        case "home":
+          return <HomeScreen />;
+        case "search":
+          return <SearchResultsScreen />;
+        case "appointments":
+          return <AppointmentsScreen />;
+        case "records":
+          return <MedicalRecordsScreen />;
+        case "profile":
+          return <ProfileScreen />;
+        default:
+          return <HomeScreen />;
+      }
+    }
+
+    if (role === "doctor") {
+      switch (currentScreen) {
+        case "home":
+          return <DoctorHomeScreen />;
+        case "appointments":
+          return <DoctorScheduleScreen  />;
+        case "profile":
+          return <ProfileScreen />;
+        default:
+          return <HomeScreen />;
+      }
+    }
+
+    if (role === "admin") {
+      switch (currentScreen) {
+        // case "home":
+        //   return <HomeScreen admin />;
+        // case "appointments":
+        //   return <AppointmentsScreen admin />;
+        // case "records":
+        //   return <MedicalRecordsScreen admin />;
+        case "profile":
+          return <ProfileScreen />;
+        default:
+          return <HomeScreen />;
+      }
     }
   };
 
-  const tabs = [
-    { id: "home" as Screen, label: "Trang chủ", icon: Home },
-    { id: "search" as Screen, label: "Tìm kiếm", icon: Search },
-    { id: "appointments" as Screen, label: "Lịch hẹn", icon: Calendar },
-    { id: "records" as Screen, label: "Hồ sơ", icon: FileText },
-    { id: "profile" as Screen, label: "Cá nhân", icon: User },
-  ];
+  const tabsByRole: Record<string, { id: Screen; label: string; icon: any }[]> =
+    {
+      user: [
+        { id: "home", label: "Trang chủ", icon: Home },
+        { id: "search", label: "Tìm kiếm", icon: Search },
+        { id: "appointments", label: "Lịch hẹn", icon: Calendar },
+        { id: "records", label: "Hồ sơ", icon: FileText },
+        { id: "profile", label: "Cá nhân", icon: User },
+      ],
+      doctor: [
+        { id: "home", label: "Trang chủ", icon: Home },
+        { id: "appointments", label: "Lịch hẹn", icon: Calendar },
+        { id: "profile", label: "Cá nhân", icon: User },
+      ],
+      admin: [
+        { id: "home", label: "Dashboard", icon: Home },
+        { id: "appointments", label: "Quản lý lịch hẹn", icon: Calendar },
+        { id: "records", label: "Quản lý hồ sơ", icon: FileText },
+        { id: "profile", label: "Cá nhân", icon: User },
+      ],
+    };
+
+  const tabs = role ? tabsByRole[role] : [];
 
   useEffect(() => {
-    const checkToken = async () => {
+    const checkAuth = async () => {
       const token = await AsyncStorage.getItem("token");
-      if (token) {
+      const userData = await AsyncStorage.getItem("user");
+
+      if (token && userData) {
         setIsLoggedIn(true);
+        try {
+          const parsedUser = JSON.parse(userData);
+          if (parsedUser.role) {
+            setRole(parsedUser.role); // lấy role từ user
+          }
+        } catch (e) {
+          console.error("Parse user error:", e);
+        }
       }
     };
-    checkToken();
+    checkAuth();
   }, []);
 
   return (
