@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2563eb",
+    backgroundColor: "#0891b2",
     height: 50,
     borderRadius: 12,
     marginTop: 12,
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   socialText: { fontSize: 15, color: "#111827" },
 
   signup: { marginTop: 24, alignItems: "center" },
-  link: { color: "#2563eb", fontWeight: "600" },
+  link: { color: "#0891b2", fontWeight: "600" },
   successOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

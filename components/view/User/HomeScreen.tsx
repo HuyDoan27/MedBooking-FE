@@ -9,7 +9,7 @@ import { SectionHeader } from "./components/SectionHeader";
 import { SpecialtyCard } from "./components/SpecialtyCard";
 
 const specialties: Specialty[] = [
-  { name: "Nội khoa", color: "#DBEAFE", textColor: "#2563EB" },
+  { name: "Nội khoa", color: "#DBEAFE", textColor: "#0891b2" },
   { name: "Nha khoa", color: "#DCFCE7", textColor: "#16A34A" },
   { name: "Mắt", color: "#F3E8FF", textColor: "#7C3AED" },
   { name: "Da liễu", color: "#FCE7F3", textColor: "#EC4899" },
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerSection: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#0891b2",
     paddingHorizontal: 24,
     paddingTop: 30,
     paddingBottom: 80,

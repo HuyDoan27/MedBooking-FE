@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   viewAll: {
     fontSize: 14,
-    color: '#2563EB',
+    color: '#0891b2',
     fontWeight: '600',
   },
 });
