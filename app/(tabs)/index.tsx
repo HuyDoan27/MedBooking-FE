@@ -19,12 +19,25 @@ import LoginScreen from "@/components/view/auth/LoginScreen";
 import DoctorHomeScreen from "@/components/view/Doctor/DoctorHomeScreen";
 import DoctorScheduleScreen from "@/components/view/Doctor/DoctorScheduleScreen";
 
+//Admin
+import AdminDashboardScreen from "@/components/view/Admin/AdminDashboardScreen";
+import AdminClinicsScreen from "@/components/view/Admin/AdminClinicsScreen";
+import AdminDoctorsScreen from "@/components/view/Admin/AdminDoctorsScreen";
+
 // Icons
 import { Home, Search, Calendar, FileText, User } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import RegisterContainer from "@/components/view/auth/RegisterContainer";
 
-type Screen = "home" | "search" | "appointments" | "records" | "profile";
+type Screen =
+  | "home"
+  | "search"
+  | "appointments"
+  | "records"
+  | "profile"
+  | "clinicManager"
+  | "doctorManager"
+  | "userManager";
 
 export default function Page() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("home");
@@ -82,7 +95,7 @@ export default function Page() {
         case "home":
           return <DoctorHomeScreen />;
         case "appointments":
-          return <DoctorScheduleScreen  />;
+          return <DoctorScheduleScreen />;
         case "profile":
           return <ProfileScreen />;
         default:
@@ -92,16 +105,16 @@ export default function Page() {
 
     if (role === "admin") {
       switch (currentScreen) {
-        // case "home":
-        //   return <HomeScreen admin />;
-        // case "appointments":
-        //   return <AppointmentsScreen admin />;
-        // case "records":
-        //   return <MedicalRecordsScreen admin />;
-        case "profile":
-          return <ProfileScreen />;
+        case "home":
+          return <AdminDashboardScreen />;
+        case "clinicManager":
+          return <AdminClinicsScreen />;
+        case "doctorManager":
+          return <AdminDoctorsScreen />;
+        // case "userManager":
+        //   return <ProfileScreen />;
         default:
-          return <HomeScreen />;
+          return <AdminDashboardScreen />;
       }
     }
   };
@@ -122,9 +135,9 @@ export default function Page() {
       ],
       admin: [
         { id: "home", label: "Dashboard", icon: Home },
-        { id: "appointments", label: "Quản lý lịch hẹn", icon: Calendar },
-        { id: "records", label: "Quản lý hồ sơ", icon: FileText },
-        { id: "profile", label: "Cá nhân", icon: User },
+        { id: "clinicManager", label: "Quản lý phòng khám", icon: Calendar },
+        { id: "doctorManager", label: "Quản lý bác sĩ", icon: FileText },
+        { id: "userManager", label: "Quản lý user", icon: User },
       ],
     };
 

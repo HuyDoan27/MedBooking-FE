@@ -34,7 +34,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
           onPress={() => onActionPress?.(action)}
         >
           <View style={styles.iconContainer}>
-            <Icon name={action.icon} size={24} color="white" />
+            <Icon name={action.icon} size={24} color="black" />
           </View>
           <Text style={styles.title}>{action.title}</Text>
           <Text style={styles.subtitle}>{action.subtitle}</Text>
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     flex: 1,
-    backgroundColor: 'rgba(59, 130, 246, 1)',
+    backgroundColor: 'rgba(255, 255, 255, 1)',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -59,20 +59,20 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 48,
     height: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(3, 3, 3, 0.3)',
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
   title: {
-    color: 'white',
+    color: 'black',
     fontWeight: '600',
     fontSize: 16,
     marginBottom: 4,
   },
   subtitle: {
-    color: 'rgba(147, 197, 253, 1)',
+    color: 'rgba(79, 114, 155, 1)',
     fontSize: 12,
     textAlign: 'center',
   },

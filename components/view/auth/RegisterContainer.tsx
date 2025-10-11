@@ -95,17 +95,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     borderWidth: 1.5,
     borderRadius: 12,
-    borderColor: "#2563eb",
+    borderColor: "#0891b2",
     backgroundColor: "#fff",
     marginBottom: 12,
   },
   activeButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#0891b2",
   },
   switchText: {
     textAlign: "center",
     fontSize: 16,
-    color: "#2563eb",
+    color: "#0891b2",
     fontWeight: "600",
   },
   activeText: {
@@ -130,5 +130,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   signup: { marginTop: 24, alignItems: "center" },
-  link: { color: "#2563eb", fontWeight: "600" },
+  link: { color: "#0891b2", fontWeight: "600" },
 });

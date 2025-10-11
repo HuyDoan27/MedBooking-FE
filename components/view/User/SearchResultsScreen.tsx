@@ -149,7 +149,7 @@ export default function EnhancedDoctorSearch() {
     >
       <Text
         style={{
-          color: selectedSpecialty === item._id ? "#2563eb" : "white",
+          color: selectedSpecialty === item._id ? "#0891b2" : "white",
           fontSize: 14,
           fontWeight: selectedSpecialty === item._id ? "600" : "500",
         }}
@@ -389,7 +389,7 @@ export default function EnhancedDoctorSearch() {
                 </View>
               </View>
               <Text
-                style={{ fontSize: 19, fontWeight: "bold", color: "#2563eb" }}
+                style={{ fontSize: 19, fontWeight: "bold", color: "#0891b2" }}
               >
                 {item.price}
               </Text>
@@ -462,13 +462,15 @@ export default function EnhancedDoctorSearch() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
+      <StatusBar barStyle="light-content" backgroundColor="#0891b2" />
 
       <View
         style={{
-          backgroundColor: "#2563eb",
+          backgroundColor: "#0891b2",
           paddingHorizontal: 16,
           paddingVertical: 16,
+          borderEndEndRadius: 16,
+          borderEndStartRadius: 16,
         }}
       >
         <View
@@ -590,7 +592,7 @@ export default function EnhancedDoctorSearch() {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color="#2563eb" />
+          <ActivityIndicator size="large" color="#0891b2" />
         </View>
       ) : error ? (
         <View
@@ -609,7 +611,7 @@ export default function EnhancedDoctorSearch() {
             }}
             style={{
               marginTop: 16,
-              backgroundColor: "#2563eb",
+              backgroundColor: "#0891b2",
               paddingVertical: 12,
               paddingHorizontal: 24,
               borderRadius: 14,

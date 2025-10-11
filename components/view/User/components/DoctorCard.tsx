@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
   bookButton: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#0891b2",
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 10,

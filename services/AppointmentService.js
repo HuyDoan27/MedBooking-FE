@@ -9,7 +9,16 @@ const BASE_URL = "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 5000,
+  headers: { "Content-Type": "application/json" },
+});
+
+// ✅ Gắn token tự động vào tất cả request
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // Lấy danh sách appointment theo doctorId kèm filter
@@ -22,10 +31,9 @@ export const getAppointmentsByDoctor = (
   });
 };
 
-
 // Lấy danh sách lịch hẹn của user
 export const getUserAppointments = async (userId, params = {}) => {
-  const token = await AsyncStorage.getItem("token"); 
+  const token = await AsyncStorage.getItem("token");
 
   return api.get(`/appointments/user/${userId}`, {
     params,
@@ -49,7 +57,7 @@ export const createAppointment = (data, token) =>
 
 // Cập nhật trạng thái lịch hẹn
 export const updateAppointmentStatus = (appointmentId, data) =>
-  api.put(`/appointments/${appointmentId}/status`, data);
+  api.patch(`/appointments/${appointmentId}/status`, data);
 
 // Dời lịch hẹn
 export const rescheduleAppointment = (appointmentId, data) =>

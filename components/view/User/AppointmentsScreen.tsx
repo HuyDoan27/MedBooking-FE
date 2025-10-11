@@ -44,7 +44,7 @@ const getStatusConfig = (status) => {
     case "completed":
       return {
         text: "Đã khám",
-        color: "#2563eb",
+        color: "#0891b2",
         bgColor: "#dbeafe",
         icon: "checkmark-done-circle",
       };
@@ -281,11 +281,11 @@ export default function EnhancedAppointmentsScreen() {
             <Ionicons
               name="calendar-outline"
               size={18}
-              color="#2563eb"
+              color="#0891b2"
               style={{ marginRight: 6 }}
             />
             <Text
-              style={{ fontSize: 16, fontWeight: "bold", color: "#2563eb" }}
+              style={{ fontSize: 16, fontWeight: "bold", color: "#0891b2" }}
             >
               Thời gian hẹn khám :{" "}
               {new Date(item.appointmentDate).toLocaleString("vi-VN")}
@@ -356,10 +356,10 @@ export default function EnhancedAppointmentsScreen() {
               <Ionicons
                 name="information-circle-outline"
                 size={18}
-                color="#2563eb"
+                color="#0891b2"
                 style={{ marginRight: 6 }}
               />
-              <Text style={{ fontSize: 15, color: "#2563eb" }}>
+              <Text style={{ fontSize: 15, color: "#0891b2" }}>
                 Ghi chú: <Text style={{ color: "#374151" }}>{item.notes}</Text>
               </Text>
             </View>
@@ -368,7 +368,7 @@ export default function EnhancedAppointmentsScreen() {
 
         {/* Thông tin bệnh nhân */}
         <View style={styles.beautyPatientBlock}>
-          <Text style={{ fontWeight: "bold", fontSize: 15, color: "#2563eb" }}>
+          <Text style={{ fontWeight: "bold", fontSize: 15, color: "#0891b2" }}>
             Thông tin của tôi
           </Text>
           <View
@@ -408,7 +408,7 @@ export default function EnhancedAppointmentsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
+      <StatusBar barStyle="light-content" backgroundColor="#0891b2" />
 
       {/* Enhanced Header */}
       <View style={styles.enhancedHeader}>
@@ -417,7 +417,7 @@ export default function EnhancedAppointmentsScreen() {
           style={styles.addButton}
           onPress={() => setShowModal(true)}
         >
-          <Ionicons name="add" size={24} color="#2563eb" />
+          <Ionicons name="add" size={24} color="#0891b2" />
         </TouchableOpacity>
       </View>
 
@@ -499,7 +499,7 @@ export default function EnhancedAppointmentsScreen() {
       >
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#2563eb" />
+            <ActivityIndicator size="large" color="#0891b2" />
             <Text style={styles.loadingText}>Đang tải...</Text>
           </View>
         ) : error ? (
@@ -548,7 +548,7 @@ export default function EnhancedAppointmentsScreen() {
             </Text>
             {/* chọn phòng khám */}
             <View style={styles.inputField}>
-              <Ionicons name="business-outline" size={18} color="#2563eb" />
+              <Ionicons name="business-outline" size={18} color="#0891b2" />
               <Picker
                 selectedValue={form.clinicId}
                 onValueChange={(value) => {
@@ -607,7 +607,7 @@ export default function EnhancedAppointmentsScreen() {
               onPress={() => setShowDatePicker(true)}
               style={styles.inputField}
             >
-              <Ionicons name="calendar-outline" size={18} color="#2563eb" />
+              <Ionicons name="calendar-outline" size={18} color="#0891b2" />
               <Text style={{ marginLeft: 8 }}>
                 {form.appointmentDate.toLocaleString("vi-VN")}
               </Text>
@@ -654,7 +654,7 @@ export default function EnhancedAppointmentsScreen() {
               <Ionicons
                 name="information-circle-outline"
                 size={18}
-                color="#2563eb"
+                color="#0891b2"
               />
               <TextInput
                 style={styles.textInput}
@@ -694,7 +694,7 @@ export default function EnhancedAppointmentsScreen() {
                 onPress={handleCreateAppointment}
                 style={[
                   styles.modalButton,
-                  { backgroundColor: "#2563eb", marginLeft: 8 },
+                  { backgroundColor: "#0891b2", marginLeft: 8 },
                 ]}
               >
                 <Text style={{ color: "white" }}>Đặt lịch</Text>
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#e5e7eb",
   },
   enhancedHeader: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#0891b2",
     paddingHorizontal: 20,
     paddingVertical: 16,
     flexDirection: "row",
@@ -766,6 +766,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderBottomStartRadius: 16,
+    borderBottomEndRadius: 16,
   },
   enhancedHeaderTitle: {
     color: "#fff",
@@ -802,8 +804,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   enhancedTabActive: {
-    backgroundColor: "#2563eb",
-    shadowColor: "#2563eb",
+    backgroundColor: "#0891b2",
+    shadowColor: "#0891b2",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -878,7 +880,7 @@ const styles = StyleSheet.create({
   },
   enhancedSpecialty: {
     fontSize: 14,
-    color: "#2563eb",
+    color: "#0891b2",
     fontWeight: "600",
   },
   duration: {
@@ -980,7 +982,7 @@ const styles = StyleSheet.create({
   enhancedPrice: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#2563eb",
+    color: "#0891b2",
   },
   actionButtons: {
     flexDirection: "row",
@@ -997,8 +999,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
   },
   primaryButton: {
-    backgroundColor: "#2563eb",
-    borderColor: "#2563eb",
+    backgroundColor: "#0891b2",
+    borderColor: "#0891b2",
   },
   actionButtonText: {
     fontSize: 13,
@@ -1026,7 +1028,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   emptyActionButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#0891b2",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,

@@ -11,8 +11,10 @@ const api = axios.create({
   timeout: 5000,
 });
 
-export const getClinics = () => api.get("/clinics");
+export const getClinicsWithDoctors = () => api.get("/clinics");
 
 // Lấy danh sách chuyên khoa theo phòng khám
 export const getSpecialtiesByClinic = (clinicId) =>
   api.get(`/clinics/${clinicId}/specialties`);
+
+export const createClinic = (body) => api.post("/clinics/create", body);

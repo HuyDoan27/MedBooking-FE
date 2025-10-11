@@ -17,6 +17,8 @@ export const getRandomDoctors = () => api.get("/doctors/random");
 // Lấy danh sách bác sĩ (có thể truyền query để search/filter)
 export const getDoctors = (params) => api.get("/doctors", { params });
 
+export const getAllDoctors = (params) => api.get("/doctors/all", { params });
+
 // Lấy chi tiết 1 bác sĩ
 export const getDoctorById = (id) => api.get(`/doctors/${id}`);
 
@@ -27,12 +29,26 @@ export const getDoctorsBySpecialty = (params) =>
 // Tạo bác sĩ (hỗ trợ JSON hoặc FormData cho upload)
 export const createDoctor = (body) => {
   // More robust FormData detection for React Native environments
-  const isFormData = body && (typeof body.append === 'function' || body instanceof FormData);
+  const isFormData =
+    body && (typeof body.append === "function" || body instanceof FormData);
 
   if (isFormData) {
     // Let axios set the multipart boundary header automatically; don't force Content-Type
-    return api.post('/doctors', body, { headers: { Accept: 'application/json' } });
+    return api.post("/doctors", body, {
+      headers: { Accept: "application/json" },
+    });
   }
 
-  return api.post('/doctors', body, { headers: { 'Content-Type': 'application/json' } });
+  return api.post("/doctors", body, {
+    headers: { "Content-Type": "application/json" },
+  });
 };
+
+// Cập nhật trạng thái bác sĩ (admin duyệt / từ chối)
+export const updateDoctorStatus = (id, data, token) =>
+  api.put(`/doctors/${id}/status`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`, // gửi JWT để authMiddleware(["admin"]) kiểm tra
+      "Content-Type": "application/json",
+    },
+  });
