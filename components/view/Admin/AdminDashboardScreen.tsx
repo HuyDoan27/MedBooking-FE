@@ -42,7 +42,7 @@ export default function AdminDashboardScreen() {
   const stats: StatCard[] = [
     {
       label: "Tổng người dùng",
-      value: "12,458",
+      value: "12,400",
       change: "+12%",
       icon: "users",
       color: "#3b82f6",
@@ -156,22 +156,27 @@ export default function AdminDashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
-
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={["#0891b2", "#06b6d4"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <Text style={styles.headerTitle}>Dashboard Quản trị</Text>
-              <Text style={styles.headerSubtitle}>Chào mừng trở lại, Admin</Text>
+              <Text style={styles.headerSubtitle}>
+                Chào mừng trở lại, Admin
+              </Text>
             </View>
             <TouchableOpacity style={styles.exportButton} activeOpacity={0.8}>
               <Text style={styles.exportButtonText}>Xuất báo cáo</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.scrollView}
@@ -187,7 +192,9 @@ export default function AdminDashboardScreen() {
                   <Text style={styles.statValue}>{stat.value}</Text>
                   <Text style={styles.statChange}>{stat.change}</Text>
                 </View>
-                <View style={[styles.statIcon, { backgroundColor: stat.color }]}>
+                <View
+                  style={[styles.statIcon, { backgroundColor: stat.color }]}
+                >
                   <Feather name={stat.icon} size={20} color="white" />
                 </View>
               </View>
@@ -207,7 +214,11 @@ export default function AdminDashboardScreen() {
             {revenueStats.map((stat, index) => (
               <View key={index} style={styles.revenueItem}>
                 <View style={styles.revenueItemHeader}>
-                  <Feather name={stat.icon} size={16} color="rgba(255,255,255,0.8)" />
+                  <Feather
+                    name={stat.icon}
+                    size={16}
+                    color="rgba(255,255,255,0.8)"
+                  />
                   <Text style={styles.revenueLabel}>{stat.label}</Text>
                 </View>
                 <Text style={styles.revenueValue}>{stat.value}</Text>
@@ -266,7 +277,8 @@ export default function AdminDashboardScreen() {
                 key={index}
                 style={[
                   styles.activityItem,
-                  index !== recentActivities.length - 1 && styles.activityBorder,
+                  index !== recentActivities.length - 1 &&
+                    styles.activityBorder,
                 ]}
               >
                 <View
@@ -298,13 +310,13 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
     paddingTop: 50,
+    borderEndEndRadius: 16,
+    borderEndStartRadius: 16,
   },
   headerContent: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 20,
   },
   headerTop: {
     flexDirection: "row",
@@ -317,21 +329,21 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#ffffffff",
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#ddddddff",
   },
   exportButton: {
-    backgroundColor: "#0891b2",
+    backgroundColor: "white",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
   },
   exportButtonText: {
-    color: "white",
+    color: "#0891b2",
     fontSize: 14,
     fontWeight: "600",
   },

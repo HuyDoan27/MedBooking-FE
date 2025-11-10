@@ -1,14 +1,19 @@
 import axios from "axios";
+import { Platform } from "react-native";
 
-// ⚠️ BASE_URL cần đổi theo môi trường
-const BASE_URL = "http://localhost:5000/api";
-// - Android Emulator: 10.0.2.2
-// - iOS Simulator: localhost
-// - Device thật: IP máy tính (vd: http://192.168.1.100:5000)
+// ⚙️ Địa chỉ IP của máy tính bạn (kiểm tra bằng ipconfig / ifconfig)
+const LOCAL_IP = "192.168.0.105"; // ⚠️ đổi thành IP thật của máy bạn
+const PORT = 5000;
+
+// ✅ Tự động chọn baseURL phù hợp
+const BASE_URL =
+  Platform.OS === "web"
+    ? `http://localhost:${PORT}/api`
+    : `http://${LOCAL_IP}:${PORT}/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 5000,
+  timeout: 10000,
 });
 
 // Lấy ngẫu nhiên 3-5 bác sĩ
@@ -27,28 +32,42 @@ export const getDoctorsBySpecialty = (params) =>
   api.get("/doctors/specialty", { params });
 
 // Tạo bác sĩ (hỗ trợ JSON hoặc FormData cho upload)
-export const createDoctor = (body) => {
-  // More robust FormData detection for React Native environments
-  const isFormData =
-    body && (typeof body.append === "function" || body instanceof FormData);
+export const createDoctor = async (body) => {
+  try {
+    const config = {
+      headers: {
+        Accept: "application/json",
+      },
+    };
 
-  if (isFormData) {
-    // Let axios set the multipart boundary header automatically; don't force Content-Type
-    return api.post("/doctors", body, {
-      headers: { Accept: "application/json" },
-    });
+    // Nếu body không phải FormData, set Content-Type JSON
+    if (!(body instanceof FormData)) {
+      config.headers["Content-Type"] = "application/json";
+    }
+
+    const res = await api.post("/doctors", body, config);
+    return res.data; // trả về data luôn
+  } catch (err) {
+    console.error(
+      "createDoctor error:",
+      err?.response?.data?.message || err.message
+    );
+    throw err;
   }
-
-  return api.post("/doctors", body, {
-    headers: { "Content-Type": "application/json" },
-  });
 };
 
-// Cập nhật trạng thái bác sĩ (admin duyệt / từ chối)
-export const updateDoctorStatus = (id, data, token) =>
-  api.put(`/doctors/${id}/status`, data, {
-    headers: {
-      Authorization: `Bearer ${token}`, // gửi JWT để authMiddleware(["admin"]) kiểm tra
-      "Content-Type": "application/json",
-    },
-  });
+// Cập nhật trạng thái bác sĩ (admin duyệt/từ chối)
+export const updateDoctorStatus = async (id, data) => {
+  try {
+    const res = await api.put(`/doctors/${id}/status`, data, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return res.data;
+  } catch (err) {
+    console.error(
+      "updateDoctorStatus error:",
+      err?.response?.data?.message || err.message
+    );
+    throw err;
+  }
+};

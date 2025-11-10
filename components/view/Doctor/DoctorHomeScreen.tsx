@@ -1,29 +1,65 @@
-import React from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-} from "react-native";
-import {
-  Calendar,
-  Clock,
-  Users,
-  TrendingUp,
-  Video,
-  FileText,
   Bell,
-  Star,
+  Calendar,
   CheckCircle,
+  Clock,
+  Star,
+  TrendingUp,
   ChevronRight,
 } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  StatusBar,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getTodayAppointmentsByDoctor } from "@/services/AppointmentService"
 
 const DoctorHomeScreen: React.FC = () => {
-  const today = new Date();
+  const [doctorName, setDoctorName] = useState("Bác sĩ");
+  const [specialty, setSpecialty] = useState("Nội khoa");
+  const [todayAppointments, setTodayAppointments] = useState([]);
 
-  // Lấy thứ bằng tiếng Việt
+  useEffect(() => {
+    (async () => {
+      try {
+        const userData = await AsyncStorage.getItem("user");
+        if (!userData) {
+          console.warn("Không tìm thấy user trong storage");
+          return;
+        }
+
+        const user = JSON.parse(userData);
+        const doctorId = user._id || user.id;
+
+        if (!doctorId) {
+          console.warn("Thiếu ID bác sĩ");
+          return;
+        }
+
+        // Cập nhật tên bác sĩ
+        setDoctorName(user.fullName || "Bác sĩ");
+
+        // Gọi API lấy lịch hôm nay — KHÔNG cần token
+        const response = await getTodayAppointmentsByDoctor(doctorId);
+
+        if (response.data.success) {
+          setTodayAppointments(response.data.data);
+        } else {
+          console.warn("Lỗi từ server:", response.data.message);
+        }
+      } catch (e) {
+        console.warn("Lỗi khi tải lịch hẹn:", e);
+      }
+    })();
+  }, []);
+
+  const today = new Date();
   const weekdays = [
     "Chủ Nhật",
     "Thứ Hai",
@@ -35,83 +71,34 @@ const DoctorHomeScreen: React.FC = () => {
   ];
   const weekday = weekdays[today.getDay()];
 
-  // Format dd/mm/yyyy
   const dateStr = today.toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
 
-  const doctorInfo = {
-    name: "BS. Nguyễn Văn An",
-    specialty: "Bác sĩ Nội khoa",
-    avatar: require("../../../assets/images/favicon.png"),
-  };
-
   const todayStats = [
-    {
-      label: "Lịch hẹn",
-      value: "12",
-      icon: Calendar,
-      color: ["#06b6d4", "#3b82f6"],
-      bg: "#ecfeff",
-    },
-    {
-      label: "Đã khám",
-      value: "5",
-      icon: CheckCircle,
-      color: ["#22c55e", "#10b981"],
-      bg: "#f0fdf4",
-    },
-    {
-      label: "Đang chờ",
-      value: "4",
-      icon: Clock,
-      color: ["#f97316", "#f59e0b"],
-      bg: "#fff7ed",
-    },
-  ];
-
-  const upcomingAppointments = [
-    {
-      id: 1,
-      time: "09:00",
-      patient: "Nguyễn Văn An",
-      age: 45,
-      reason: "Khám tổng quát",
-      type: "in-person",
-      avatar: require("../../../assets/images/favicon.png"),
-    },
-    {
-      id: 2,
-      time: "09:30",
-      patient: "Trần Thị Bình",
-      age: 32,
-      reason: "Tái khám tim mạch",
-      type: "video",
-      avatar: require("../../../assets/images/favicon.png"),
-    },
-    {
-      id: 3,
-      time: "10:00",
-      patient: "Lê Minh Cường",
-      age: 28,
-      reason: "Đau đầu, chóng mặt",
-      type: "in-person",
-      avatar: require("../../../assets/images/favicon.png"),
-    },
+    { label: "Lịch hẹn", value: todayAppointments.length.toString(), icon: Calendar, color: "#06b6d4", bg: "#ecfeff" },
+    { label: "Đã khám", value: "5", icon: CheckCircle, color: "#22c55e", bg: "#f0fdf4" },
+    { label: "Đang chờ", value: "4", icon: Clock, color: "#f97316", bg: "#fff7ed" },
   ];
 
   return (
     <ScrollView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0891b2" />
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={styles.doctorInfo}>
-            <Image source={doctorInfo.avatar} style={styles.avatar} />
+            <Image
+              source={{
+                uri:
+                  `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
+              }}
+              style={styles.avatar}
+            />
             <View>
-              <Text style={styles.doctorName}>Xin chào, {doctorInfo.name}</Text>
-              <Text style={styles.specialty}>{doctorInfo.specialty}</Text>
+              <Text style={styles.doctorName}>Xin chào, Bs. {doctorName}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.bellButton}>
@@ -138,11 +125,8 @@ const DoctorHomeScreen: React.FC = () => {
       {/* Stats */}
       <View style={styles.statsGrid}>
         {todayStats.map((stat, idx) => (
-          <View
-            key={idx}
-            style={[styles.statCard, { backgroundColor: stat.bg }]}
-          >
-            <stat.icon size={28} color={stat.color[0]} />
+          <View key={idx} style={[styles.statCard, { backgroundColor: stat.bg }]}>
+            <stat.icon size={28} color={stat.color} />
             <Text style={styles.statValue}>{stat.value}</Text>
             <Text style={styles.statLabel}>{stat.label}</Text>
           </View>
@@ -152,33 +136,34 @@ const DoctorHomeScreen: React.FC = () => {
       {/* Upcoming Appointments */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Lịch sắp tới</Text>
-          <TouchableOpacity
-            style={{ flexDirection: "row", alignItems: "center" }}
-          >
-            <Text style={{ color: "#06b6d4", fontWeight: "600" }}>
-              Xem tất cả
-            </Text>
+          <Text style={styles.cardTitle}>Lịch khám ngày hôm nay</Text>
+          <TouchableOpacity style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={{ color: "#06b6d4", fontWeight: "600" }}>Xem tất cả</Text>
             <ChevronRight size={16} color="#06b6d4" />
           </TouchableOpacity>
         </View>
 
-        {upcomingAppointments.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.appointmentItem}>
-            <Image source={item.avatar} style={styles.patientAvatar} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.patientName}>
-                {item.patient}{" "}
-                <Text style={styles.patientAge}>{item.age} tuổi</Text>
-              </Text>
-              <Text style={styles.reason}>{item.reason}</Text>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Clock size={16} color="#06b6d4" />
-              <Text style={styles.time}>{item.time}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {todayAppointments.length === 0 ? (
+          <Text>Không có lịch hẹn hôm nay</Text>
+        ) : (
+          todayAppointments.map((item) => (
+            <TouchableOpacity key={item._id} style={styles.appointmentItem}>
+              <Image source={require("../../../assets/images/favicon.png")} style={styles.patientAvatar} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.patientName}>
+                  {item.userId?.fullName || "Bệnh nhân"}
+                </Text>
+                <Text style={styles.reason}>{item.reason || item.appointmentType || "Chưa có lý do"}</Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Clock size={16} color="#06b6d4" />
+                <Text style={styles.time}>
+                  {new Date(item.appointmentDate).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </View>
 
       {/* Performance */}
@@ -190,11 +175,7 @@ const DoctorHomeScreen: React.FC = () => {
             <Text style={styles.reason}>Bạn đã khám 45 bệnh nhân</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
-            <Text
-              style={{ fontSize: 22, fontWeight: "bold", color: "#a855f7" }}
-            >
-              +12%
-            </Text>
+            <Text style={{ fontSize: 22, fontWeight: "bold", color: "#a855f7" }}>+12%</Text>
             <Text style={styles.subText}>so với tuần trước</Text>
           </View>
         </View>
@@ -209,98 +190,49 @@ const styles = StyleSheet.create({
     backgroundColor: "#0891b2",
     padding: 16,
     paddingBottom: 24,
+    paddingTop: 50,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+  headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   doctorInfo: { flexDirection: "row", alignItems: "center" },
   avatar: { width: 56, height: 56, borderRadius: 28, marginRight: 12 },
   doctorName: { color: "#fff", fontSize: 18, fontWeight: "bold" },
   specialty: { color: "#bae6fd", fontSize: 14 },
   bellButton: { padding: 8 },
-  redDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "red",
-    position: "absolute",
-    top: 6,
-    right: 6,
-  },
+  redDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "red", position: "absolute", top: 6, right: 6 },
   dateCard: {
     marginTop: 16,
     padding: 12,
-    paddingHorizontal: 30,
     backgroundColor: "rgba(255,255,255,0.2)",
     borderRadius: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  subText: { color: "#000000ff", fontSize: 14 },
+  subText: { color: "#000000aa", fontSize: 14 },
   bigText: { color: "#fff", fontSize: 20, fontWeight: "bold" },
   rating: { color: "#fff", fontSize: 20, fontWeight: "bold", marginLeft: 4 },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "nowrap",
-    margin: 16,
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  statCard: {
-    flexBasis: "30%",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#87898bff",
-  },
-  statValue: { fontSize: 22, fontWeight: "bold", color: "#111" },
-  statLabel: { fontSize: 14, color: "#555" },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#111",
-  },
-  quickGrid: { flexDirection: "row", justifyContent: "space-between" },
-  quickButton: { alignItems: "center", flex: 1 },
-  quickText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#333",
-    marginTop: 6,
-    textAlign: "center",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
+  statsGrid: { flexDirection: "row", margin: 16, gap: 12, justifyContent: "space-between" },
+  statCard: { flexBasis: "30%", padding: 16, borderRadius: 16, alignItems: "center" },
+  statValue: { fontSize: 22, fontWeight: "bold", color: "#111", marginTop: 4 },
+  statLabel: { fontSize: 14, color: "#555", marginTop: 2 },
+  card: { backgroundColor: "#fff", borderRadius: 16, padding: 16, marginHorizontal: 16, marginBottom: 16 },
+  cardTitle: { fontSize: 16, fontWeight: "bold", marginBottom: 8, color: "#111" },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   appointmentItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f0f9ff",
-    height: 100,
+    height: 90,
     paddingHorizontal: 12,
     borderRadius: 12,
     marginBottom: 8,
   },
-  patientAvatar: { width: 60, height: 60, borderRadius: 24, marginRight: 15 },
-  patientName: { fontWeight: "700", color: "#111", marginBottom: 6 },
+  patientAvatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
+  patientName: { fontWeight: "700", color: "#111" },
   patientAge: { fontSize: 12, color: "#666" },
-  reason: { fontSize: 13, color: "#555" },
+  reason: { fontSize: 13, color: "#555", marginTop: 2 },
   time: { fontSize: 14, fontWeight: "600", color: "#06b6d4", marginLeft: 4 },
 });
 

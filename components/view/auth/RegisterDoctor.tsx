@@ -1,5 +1,5 @@
 import { createDoctor } from "@/services/DoctorService";
-import { getClinics, getSpecialtiesByClinic } from "@/services/ClinicService";
+import { getClinicsWithDoctors, getSpecialtiesByClinic } from "@/services/ClinicService";
 import {
   Building2,
   CheckCircle,
@@ -80,7 +80,7 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
   const fetchClinics = async () => {
     try {
       setLoadingClinics(true);
-      const response = await getClinics();
+      const response = await getClinicsWithDoctors();
 
       if (response.status !== 200) {
         throw new Error("Failed to fetch clinics");
@@ -125,38 +125,26 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
     }
 
     try {
-      const fd = new FormData();
-      fd.append("fullName", formData.fullName);
-      fd.append("email", formData.email);
-      fd.append("phoneNumber", formData.phoneNumber);
-      fd.append("role", "doctor");
-      fd.append("specialty", formData.specialty);
+      const payload = {
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+        role: "doctor",
+        specialty: formData.specialty || "",
+        clinic:
+          formData.clinic ||
+          formData.selectedClinic?._id ||
+          formData.selectedClinic?.id,
+        clinicName: formData.clinicName || formData.selectedClinic?.name || "",
+        clinicAddress:
+          formData.clinicAddress || formData.selectedClinic?.address || "",
+        experience: formData.experience || "",
+        qualifications: formData.qualifications || [],
+      };
 
-      const clinicId =
-        formData.clinic ||
-        formData.selectedClinic?._id ||
-        formData.selectedClinic?.id;
-      if (clinicId) fd.append("clinic", clinicId);
-
-      fd.append(
-        "clinicName",
-        formData.clinicName || formData.selectedClinic?.name || ""
-      );
-      fd.append(
-        "clinicAddress",
-        formData.clinicAddress || formData.selectedClinic?.address || ""
-      );
-      fd.append("experience", formData.experience || "");
-      fd.append(
-        "qualifications",
-        JSON.stringify(formData.qualifications || [])
-      );
-
-      console.log("Doctor Register FormData prepared");
-      const res = await createDoctor(fd);
+      const res = await createDoctor(payload); // payload là JSON
 
       if (onRegisterSuccess) onRegisterSuccess(res);
-
       setShowSuccessModal(true);
     } catch (err: any) {
       console.error("RegisterDoctor error:", err);
@@ -186,8 +174,8 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
     Boolean(formData.specialty?.toString()?.trim()) &&
     Boolean(
       formData.clinic ||
-        formData.selectedClinic?._id ||
-        formData.clinicName?.trim()
+      formData.selectedClinic?._id ||
+      formData.clinicName?.trim()
     ) &&
     Boolean(formData.experience?.trim()) &&
     Array.isArray(formData.qualifications) &&
@@ -202,9 +190,6 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.logo]}>
-          <Heart size={40} color="#fff" />
-        </View>
         <Text style={styles.title}>MedBooking</Text>
         <Text style={styles.subtitle}>Đăng ký tài khoản bác sĩ</Text>
       </View>
@@ -226,8 +211,8 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
               style={[
                 styles.input,
                 attemptedSubmit &&
-                  !formData.fullName?.trim() &&
-                  styles.invalidInput,
+                !formData.fullName?.trim() &&
+                styles.invalidInput,
               ]}
               placeholder="Nhập họ và tên"
               value={formData.fullName}
@@ -250,8 +235,8 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
               style={[
                 styles.input,
                 attemptedSubmit &&
-                  !formData.email?.trim() &&
-                  styles.invalidInput,
+                !formData.email?.trim() &&
+                styles.invalidInput,
               ]}
               placeholder="doctor@example.com"
               value={formData.email}
@@ -276,8 +261,8 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
               style={[
                 styles.input,
                 attemptedSubmit &&
-                  !formData.phoneNumber?.trim() &&
-                  styles.invalidInput,
+                !formData.phoneNumber?.trim() &&
+                styles.invalidInput,
               ]}
               placeholder="0901 234 567"
               value={formData.phoneNumber}
@@ -299,8 +284,8 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
             style={[
               styles.selectWrapper,
               attemptedSubmit &&
-                !formData.selectedClinic &&
-                styles.invalidInput,
+              !formData.selectedClinic &&
+              styles.invalidInput,
             ]}
             onPress={() => setShowClinicModal(true)}
           >
@@ -351,8 +336,8 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
                   style={[
                     styles.input,
                     attemptedSubmit &&
-                      !formData.specialty?.toString()?.trim() &&
-                      styles.invalidInput,
+                    !formData.specialty?.toString()?.trim() &&
+                    styles.invalidInput,
                   ]}
                   placeholder="Chọn chuyên khoa từ danh sách bên dưới"
                   value={formData.specialtyName}
@@ -379,7 +364,7 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
                       style={[
                         styles.chip,
                         formData.specialty === (spec._id || spec.id) &&
-                          styles.chipSelected,
+                        styles.chipSelected,
                       ]}
                       onPress={() => {
                         handleInputChange("specialty", spec._id || spec.id);
@@ -390,7 +375,7 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
                         style={[
                           styles.chipText,
                           formData.specialty === (spec._id || spec.id) &&
-                            styles.chipTextSelected,
+                          styles.chipTextSelected,
                         ]}
                       >
                         {spec.name || spec}
@@ -419,8 +404,8 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
               style={[
                 styles.input,
                 attemptedSubmit &&
-                  !formData.experience?.trim() &&
-                  styles.invalidInput,
+                !formData.experience?.trim() &&
+                styles.invalidInput,
               ]}
               placeholder="Ví dụ: 10 năm"
               value={formData.experience}
@@ -558,7 +543,7 @@ export default function RegisterDoctor({ onRegisterSuccess }: any) {
                     style={[
                       styles.clinicItem,
                       formData.selectedClinic?._id === item._id &&
-                        styles.clinicItemSelected,
+                      styles.clinicItemSelected,
                     ]}
                     onPress={() => handleClinicSelect(item)}
                   >

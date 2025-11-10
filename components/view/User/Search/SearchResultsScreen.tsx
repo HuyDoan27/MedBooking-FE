@@ -1,3 +1,9 @@
+import {
+  getDoctors,
+  getDoctorsBySpecialty,
+  getRandomDoctors,
+} from "@/services/DoctorService";
+import { getSpecialty } from "@/services/SpecialtyService";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -5,19 +11,15 @@ import {
   FlatList,
   Image,
   SafeAreaView,
-  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import {
-  getDoctors,
-  getRandomDoctors,
-  getDoctorsBySpecialty,
-} from "../../../services/DoctorService";
-import { getSpecialty } from "../../../services/SpecialtyService";
+import CreateAppointmentModal from "../Appointments/components/CreateAppointmentModal";
+import { getUserAppointments } from "@/services/AppointmentService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function EnhancedDoctorSearch() {
   const [isSearching, setIsSearching] = useState(false);
@@ -30,6 +32,11 @@ export default function EnhancedDoctorSearch() {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [userId, setUserId] = useState<string | null>(null);
+
   // Fetch specialties from API
   useEffect(() => {
     const fetchSpecialties = async () => {
@@ -89,6 +96,31 @@ export default function EnhancedDoctorSearch() {
     }
   };
 
+  const loadAppointments = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const userJson = await AsyncStorage.getItem("user");
+      if (userJson) {
+        const user = JSON.parse(userJson);
+        setUserId(user._id);
+
+        const params = {
+          status: "upcoming",
+          page: 1,
+          limit: 10,
+        };
+        const response = await getUserAppointments(user._id, params);
+        setAppointments(response.data.data);
+      }
+    } catch (err) {
+      setError("Không thể tải danh sách lịch hẹn. Vui lòng thử lại.");
+      console.error("Error loading:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Khi vào màn hình, gọi getRandomDoctors
   useEffect(() => {
     fetchRandomDoctors();
@@ -124,6 +156,11 @@ export default function EnhancedDoctorSearch() {
       newFavorites.add(doctorId);
     }
     setFavorites(newFavorites);
+  };
+
+  const handleBookAppointment = (doctor) => {
+    setSelectedDoctor(doctor);
+    setShowModal(true);
   };
 
   const renderSpecialtyTab = ({ item }) => (
@@ -174,296 +211,198 @@ export default function EnhancedDoctorSearch() {
         overflow: "hidden",
       }}
     >
-      {item.isOnline && (
+      <View style={{ padding: 20 }}>
+        {/* Dòng 1: Ảnh, Thông tin, Icons */}
         <View
           style={{
-            backgroundColor: "#10b981",
-            paddingHorizontal: 16,
-            paddingVertical: 10,
+            flexDirection: "row",
+            alignItems: "flex-start",
+            marginBottom: 16,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View
+          {/* Ảnh */}
+          <Image
+            source={{ uri: item.image }}
+            style={{
+              width: 68,
+              height: 68,
+              borderRadius: 16,
+              borderWidth: 3,
+              borderColor: "#dbeafe",
+              marginRight: 12,
+            }}
+          />
+
+          {/* Thông tin: Họ tên và kinh nghiệm */}
+          <View style={{ flex: 1 }}>
+            <Text
               style={{
-                width: 8,
-                height: 8,
-                backgroundColor: "white",
-                borderRadius: 4,
-                marginRight: 8,
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#111827",
+                marginTop: 10,
               }}
-            />
-            <Text style={{ color: "white", fontSize: 12, fontWeight: "600" }}>
-              🟢 Đang hoạt động - {item.responseTime}
+            >
+              {item.fullName}
+            </Text>
+            <Text
+              style={{
+                color: "#6b7280",
+                fontSize: 13,
+                fontWeight: "500",
+              }}
+            >
+              {item.experience} Kinh nghiệm
             </Text>
           </View>
-        </View>
-      )}
 
-      <View style={{ padding: 20 }}>
-        <View style={{ flexDirection: "row" }}>
-          <View style={{ position: "relative", marginRight: 16 }}>
-            <Image
-              source={{ uri: item.image }}
+          {/* Icons mắt và tim */}
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => toggleFavorite(item._id)}
               style={{
-                width: 68,
-                height: 68,
-                borderRadius: 16,
-                borderWidth: 3,
-                borderColor: "#dbeafe",
-              }}
-            />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: 8,
+                padding: 8,
+                borderRadius: 20,
+                backgroundColor: "#f3f4f6",
               }}
             >
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "bold",
-                    color: "#111827",
-                    marginBottom: 6,
-                  }}
-                >
-                  {item.fullName}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor: "#dbeafe",
-                      paddingHorizontal: 10,
-                      paddingVertical: 5,
-                      borderRadius: 12,
-                      marginRight: 8,
-                      marginBottom: 4,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#1d4ed8",
-                        fontSize: 13,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {item.specialty?.name}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{
-                      color: "#6b7280",
-                      fontSize: 13,
-                      fontWeight: "500",
-                    }}
-                  >
-                    • {item.experience} Kinh nghiệm
-                  </Text>
-                </View>
-              </View>
+              <Ionicons name="eye" size={20} color="#9ca3af" />
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => toggleFavorite(item._id)}
-                style={{
-                  padding: 8,
-                  borderRadius: 20,
-                  marginRight: 8,
-                  backgroundColor: "#f3f4f6",
-                }}
-              >
-                <Ionicons name={"eye"} size={20} color={"#9ca3af"} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => toggleFavorite(item._id)}
-                style={{
-                  padding: 8,
-                  borderRadius: 20,
-                  backgroundColor: favorites.has(item.id)
-                    ? "#fee2e2"
-                    : "#f3f4f6",
-                }}
-              >
-                <Ionicons
-                  name={favorites.has(item.id) ? "heart" : "heart-outline"}
-                  size={20}
-                  color={favorites.has(item.id) ? "#ef4444" : "#9ca3af"}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <View
+            <TouchableOpacity
+              onPress={() => toggleFavorite(item._id)}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 12,
+                padding: 8,
+                borderRadius: 20,
+                backgroundColor: favorites.has(item._id)
+                  ? "#fee2e2"
+                  : "#f3f4f6",
               }}
             >
-              <Ionicons name="home" size={16} color="#6b7280" />
-              <Text
-                style={{
-                  color: "#6b7280",
-                  fontSize: 13,
-                  marginLeft: 16,
-                  flex: 1,
-                }}
-                numberOfLines={2}
-              >
-                {item.clinicName}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginRight: 20,
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor: "#f3f4f6",
-                      padding: 6,
-                      borderRadius: 8,
-                      marginRight: 6,
-                    }}
-                  >
-                    <Ionicons
-                      name="location-outline"
-                      size={14}
-                      color="#6b7280"
-                    />
-                  </View>
-                  <Text
-                    style={{
-                      color: "#6b7280",
-                      fontSize: 13,
-                      fontWeight: "500",
-                    }}
-                  >
-                    Địa chỉ phòng khám : {item.clinicAddress}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <View
-                    style={{
-                      backgroundColor: "#dcfce7",
-                      padding: 6,
-                      borderRadius: 8,
-                      marginRight: 6,
-                    }}
-                  >
-                    <Ionicons name="time-outline" size={14} color="#16a34a" />
-                  </View>
-                  <Text
-                    style={{
-                      color: "#16a34a",
-                      fontSize: 13,
-                      fontWeight: "600",
-                    }}
-                  >
-                    {item.nextSlot}
-                  </Text>
-                </View>
-              </View>
-              <Text
-                style={{ fontSize: 19, fontWeight: "bold", color: "#0891b2" }}
-              >
-                {item.price}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <View style={{ flexDirection: "row", marginRight: 8 }}>
-                {[...Array(5)].map((_, i) => (
-                  <Ionicons
-                    key={i}
-                    name="star"
-                    size={16}
-                    color={i < Math.floor(item.rating) ? "#f59e0b" : "#e5e7eb"}
-                  />
-                ))}
-              </View>
-              <Text
-                style={{
-                  fontWeight: "700",
-                  color: "#111827",
-                  fontSize: 15,
-                  marginRight: 4,
-                }}
-              >
-                {item.rating}
-              </Text>
-              <Text style={{ color: "#6b7280", fontSize: 13 }}>
-                ({item.reviews} đánh giá)
-              </Text>
-            </View>
-
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  backgroundColor: "#f8fafc",
-                  borderWidth: 1.5,
-                  borderColor: "#e2e8f0",
-                  paddingVertical: 14,
-                  borderRadius: 14,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="calendar-outline" size={18} color="#374151" />
-                <Text
-                  style={{
-                    color: "#374151",
-                    fontWeight: "600",
-                    marginLeft: 8,
-                    fontSize: 14,
-                  }}
-                >
-                  Đặt lịch
-                </Text>
-              </TouchableOpacity>
-            </View>
+              <Ionicons
+                name={favorites.has(item._id) ? "heart" : "heart-outline"}
+                size={20}
+                color={favorites.has(item._id) ? "#ef4444" : "#9ca3af"}
+              />
+            </TouchableOpacity>
           </View>
         </View>
+
+        {/* Dòng 2: Tên phòng khám */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+          }}
+        >
+          <Ionicons name="home" size={16} color="#6b7280" />
+          <Text
+            style={{
+              color: "#6b7280",
+              fontSize: 13,
+              marginLeft: 8,
+              flex: 1,
+            }}
+            numberOfLines={2}
+          >
+            {item.clinicName}
+          </Text>
+        </View>
+
+        {/* Dòng 3: Địa chỉ và giờ khám tiếp theo */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 12,
+            gap: 8,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#f3f4f6",
+              padding: 6,
+              borderRadius: 8,
+            }}
+          >
+            <Ionicons name="location-outline" size={14} color="#6b7280" />
+          </View>
+          <Text
+            style={{
+              color: "#6b7280",
+              fontSize: 13,
+              fontWeight: "500",
+              flex: 1,
+            }}
+          >
+            {item.clinicAddress}
+          </Text>
+        </View>
+
+        {/* Dòng 5: Đánh giá sao */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
+        >
+          <View style={{ flexDirection: "row", marginRight: 8 }}>
+            {[...Array(5)].map((_, i) => (
+              <Ionicons
+                key={i}
+                name="star"
+                size={16}
+                color={i < Math.floor(item.rating) ? "#f59e0b" : "#e5e7eb"}
+              />
+            ))}
+          </View>
+          <Text
+            style={{
+              fontWeight: "700",
+              color: "#111827",
+              fontSize: 15,
+              marginRight: 4,
+            }}
+          >
+            {item.rating}
+          </Text>
+          <Text style={{ color: "#6b7280", fontSize: 13 }}>
+            ({item.reviews} đánh giá)
+          </Text>
+        </View>
+
+        {/* Dòng 6: Nút đặt lịch */}
+        <TouchableOpacity
+          onPress={() => handleBookAppointment(item)}
+          style={{
+            backgroundColor: "#0891b2",
+            paddingVertical: 14,
+            borderRadius: 14,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Ionicons name="calendar-outline" size={18} color="white" />
+          <Text
+            style={{
+              color: "white",
+              fontWeight: "600",
+              marginLeft: 8,
+              fontSize: 14,
+            }}
+          >
+            Đặt lịch
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <StatusBar barStyle="light-content" backgroundColor="#0891b2" />
-
       <View
         style={{
           backgroundColor: "#0891b2",
@@ -471,6 +410,7 @@ export default function EnhancedDoctorSearch() {
           paddingVertical: 16,
           borderEndEndRadius: 16,
           borderEndStartRadius: 16,
+          paddingTop: 50,
         }}
       >
         <View
@@ -480,17 +420,6 @@ export default function EnhancedDoctorSearch() {
             marginBottom: 16,
           }}
         >
-          <TouchableOpacity
-            style={{
-              padding: 10,
-              borderRadius: 22,
-              backgroundColor: "rgba(255,255,255,0.15)",
-              marginRight: 12,
-            }}
-          >
-            <Ionicons name="arrow-back" size={20} color="white" />
-          </TouchableOpacity>
-
           <View
             style={{
               flex: 1,
@@ -656,6 +585,14 @@ export default function EnhancedDoctorSearch() {
           </TouchableOpacity>
         </View>
       )}
+
+      <CreateAppointmentModal
+        visible={showModal}
+        onClose={() => {
+          setShowModal(false);
+        }}
+        onSuccess={loadAppointments}
+      />
     </SafeAreaView>
   );
 }

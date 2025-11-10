@@ -24,7 +24,7 @@ const RegisterContainer: React.FC = ({ onSwitchToLogin }: any) => {
           style={[styles.switchButton]}
           onPress={() => router.push("/register-user")}
         >
-          <Text style={styles.switchText}>Người dùng</Text>
+          <Text style={styles.switchText}>Bệnh nhân</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   switchButton: {
-    width: 500,
+    width: 300,
     paddingVertical: 12,
     paddingHorizontal: 20,
     marginHorizontal: 8,
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderColor: "#0891b2",
     backgroundColor: "#fff",
-    marginBottom: 12,
+    marginBottom: 6,
   },
   activeButton: {
     backgroundColor: "#0891b2",

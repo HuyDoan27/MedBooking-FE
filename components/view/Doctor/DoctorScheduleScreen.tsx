@@ -1,12 +1,13 @@
 import {
   getAppointmentsByDoctor,
   updateAppointmentStatus,
+  submitMedicalReport,
 } from "@/services/AppointmentService";
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   FlatList,
   Image,
@@ -34,6 +35,13 @@ type Appointment = {
   reason: string;
   type?: "in-person" | "video";
   status: "confirmed" | "completed" | "cancelled" | "pending" | "upcoming";
+  reportSent?: boolean;
+  medicalReport?: {
+    condition: string;
+    treatmentMethod: string;
+    prescription: { medicine: string }[];
+    notes?: string;
+  };
   avatar?: string;
   appointmentDate?: string;
 };
@@ -44,8 +52,8 @@ const getStatusConfig = (status: string) => {
       return {
         color: "#0891b2",
         bg: "#e0f2fe",
-        icon: "check-circle",
-        label: "Đã xác nhận",
+        icon: "clock",
+        label: "Sắp khám",
       };
     case "pending":
       return {
@@ -86,13 +94,25 @@ export default function DoctorScheduleScreen() {
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  
+
   // State cho modal từ chối
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [pendingRejectId, setPendingRejectId] = useState<string | null>(null);
+  // State for send-medical-report flow
+  const [sendReportChoiceVisible, setSendReportChoiceVisible] =
+    useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [lastCompletedAppointmentId, setLastCompletedAppointmentId] =
+    useState<string | null>(null);
+  const [medicalReport, setMedicalReport] = useState({
+    condition: "",
+    treatmentMethod: "",
+    prescription: "",
+    notes: "",
+  });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const userStr = await AsyncStorage.getItem("user");
       if (!userStr) return;
@@ -121,17 +141,20 @@ export default function DoctorScheduleScreen() {
         type: item.type || "in-person",
         avatar: item.userId.avatar || undefined,
         appointmentDate: item.appointmentDate,
+        reportSent: !!item.medicalReport,
+        medicalReport: item.medicalReport || null,
       }));
 
       setAppointments(mapped);
     } catch (err) {
       console.error("fetch appointments error:", err);
     }
-  };
+  }, [date, filterStatus, search]);
 
   useEffect(() => {
     fetchData();
-  }, [filterStatus, search, date]);
+  }, [filterStatus, search, date, fetchData]);
+
 
   const handleUpdateStatus = async (
     appointmentId: string,
@@ -142,10 +165,10 @@ export default function DoctorScheduleScreen() {
       Toast.show({ type: "info", text1: "Đang xử lý...", position: "top" });
 
       const payload: any = { status: newStatus };
-      
+
       // Nếu từ chối, thêm lý do
       if (newStatus === "cancelled" && cancellationReason) {
-        payload.reason  = cancellationReason;
+        payload.reason = cancellationReason;
       }
 
       const res = await updateAppointmentStatus(appointmentId, payload);
@@ -159,12 +182,17 @@ export default function DoctorScheduleScreen() {
           newStatus === "upcoming"
             ? "Lịch hẹn đã được duyệt"
             : newStatus === "cancelled"
-            ? "Lịch hẹn đã bị từ chối"
-            : newStatus === "completed"
-            ? "Đã đánh dấu hoàn thành"
-            : "Trạng thái đã được cập nhật",
+              ? "Lịch hẹn đã bị từ chối"
+              : newStatus === "completed"
+                ? "Đã đánh dấu hoàn thành"
+                : "Trạng thái đã được cập nhật",
         position: "bottom",
       });
+      // Nếu vừa cập nhật thành completed thì hiện lựa chọn gửi thông tin bệnh án
+      if (newStatus === "completed") {
+        setLastCompletedAppointmentId(appointmentId);
+        setSendReportChoiceVisible(true);
+      }
     } catch (err) {
       console.error("❌ update status error:", err);
       Toast.show({
@@ -182,7 +210,7 @@ export default function DoctorScheduleScreen() {
     message: string
   ) => {
     console.log("confirmAction chạy với:", appointmentId, newStatus);
-    
+
     // Nếu là từ chối, hiển thị modal nhập lý do
     if (newStatus === "cancelled") {
       setPendingRejectId(appointmentId);
@@ -190,7 +218,7 @@ export default function DoctorScheduleScreen() {
       setRejectModalVisible(true);
       return;
     }
-    
+
     // Các trạng thái khác: duyệt hoặc hoàn thành
     Alert.alert(
       "Xác nhận",
@@ -225,6 +253,54 @@ export default function DoctorScheduleScreen() {
       handleUpdateStatus(pendingRejectId, "cancelled", rejectReason.trim());
       setPendingRejectId(null);
       setRejectReason("");
+    }
+  };
+
+  // Gửi báo cáo y tế
+  const handleSendNow = () => {
+    setSendReportChoiceVisible(false);
+    setReportModalVisible(true);
+  };
+
+  const handleSendLater = () => {
+    setSendReportChoiceVisible(false);
+    setLastCompletedAppointmentId(null);
+  };
+
+  const handleSubmitMedicalReport = async () => {
+    if (!lastCompletedAppointmentId) return;
+
+    if (!medicalReport.condition.trim() || !medicalReport.treatmentMethod.trim()) {
+      Toast.show({
+        type: "error",
+        text1: "Thiếu thông tin",
+        text2: "Vui lòng nhập tình trạng bệnh và phương pháp điều trị",
+        position: "top",
+      });
+      return;
+    }
+
+    try {
+      Toast.show({ type: "info", text1: "Đang gửi...", position: "top" });
+      const payload = {
+        condition: medicalReport.condition.trim(),
+        treatmentMethod: medicalReport.treatmentMethod.trim(),
+        prescription: medicalReport.prescription.trim()
+          ? [{ medicine: medicalReport.prescription.trim() }]
+          : [],
+        notes: medicalReport.notes.trim(),
+      };
+
+      const res = await submitMedicalReport(lastCompletedAppointmentId, payload);
+      console.log("submitMedicalReport result", res.data);
+      Toast.show({ type: "success", text1: "Gửi thành công", position: "bottom" });
+      setReportModalVisible(false);
+      setLastCompletedAppointmentId(null);
+      setMedicalReport({ condition: "", treatmentMethod: "", prescription: "", notes: "" });
+      await fetchData();
+    } catch (err) {
+      console.error("submitMedicalReport error", err);
+      Toast.show({ type: "error", text1: "Lỗi", text2: "Gửi thất bại", position: "bottom" });
     }
   };
 
@@ -275,8 +351,37 @@ export default function DoctorScheduleScreen() {
             }
             activeOpacity={0.7}
           >
-            <Feather name="check-circle" size={14} color="white" />
-            <Text style={styles.actionBtnText}>Hoàn thành</Text>
+            <Text style={styles.actionBtnText}>Xác nhận khám xong</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (item.status === "completed") {
+      // Nếu đã gửi báo cáo thì hiển thị nút disabled/label 'Đã gửi báo cáo'
+      if (item.reportSent) {
+        return (
+          <View style={styles.actionButtons}>
+            <View style={[styles.actionBtn, styles.sentBadge]}>
+              <Feather name="check" size={14} color="white" />
+              <Text style={styles.actionBtnText}>Đã gửi báo cáo</Text>
+            </View>
+          </View>
+        );
+      }
+
+      return (
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.approveBtn]}
+            onPress={() => {
+              setLastCompletedAppointmentId(item.id);
+              setReportModalVisible(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <Feather name="mail" size={14} color="white" />
+            <Text style={styles.actionBtnText}>Gửi báo cáo</Text>
           </TouchableOpacity>
         </View>
       );
@@ -298,7 +403,7 @@ export default function DoctorScheduleScreen() {
         activeOpacity={0.9}
       >
         <View
-          style={[styles.cardBorder, { backgroundColor: statusConfig.color }]}
+          style={{ borderColor: statusConfig.color }}
         />
 
         <View style={styles.topSection}>
@@ -318,11 +423,11 @@ export default function DoctorScheduleScreen() {
                 source={{
                   uri:
                     item.avatar ||
-                    "https://ui-avatars.com/api/?name=" +
-                      encodeURIComponent(item.patient),
+                    `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
                 }}
                 style={styles.avatar}
               />
+
               <View
                 style={[styles.avatarRing, { borderColor: statusConfig.color }]}
               />
@@ -503,16 +608,12 @@ export default function DoctorScheduleScreen() {
                     source={{
                       uri:
                         selectedAppointment.avatar ||
-                        "https://ui-avatars.com/api/?name=" +
-                          encodeURIComponent(selectedAppointment.patient),
+                        `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`,
                     }}
-                    style={styles.modalAvatar}
+                    style={styles.avatar}
                   />
-                  {selectedAppointment.type === "video" && (
-                    <View style={styles.modalVideoIcon}>
-                      <Feather name="video" size={16} color="white" />
-                    </View>
-                  )}
+
+
                 </View>
                 <Text style={styles.modalPatientName}>
                   {selectedAppointment.patient}
@@ -610,6 +711,62 @@ export default function DoctorScheduleScreen() {
                     </Text>
                   </View>
                 </View>
+
+                {selectedAppointment.medicalReport && (
+                  <>
+                    <View style={[styles.modalDetailRow, { marginTop: 20 }]}>
+                      <View style={styles.modalDetailIcon}>
+                        <Feather name="clipboard" size={18} color="#0891b2" />
+                      </View>
+                      <View style={styles.modalDetailContent}>
+                        <Text style={styles.modalDetailLabel}>Tình trạng bệnh</Text>
+                        <Text style={styles.modalDetailValue}>
+                          {selectedAppointment.medicalReport.condition}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.modalDetailRow}>
+                      <View style={styles.modalDetailIcon}>
+                        <Feather name="activity" size={18} color="#0891b2" />
+                      </View>
+                      <View style={styles.modalDetailContent}>
+                        <Text style={styles.modalDetailLabel}>Phương pháp điều trị</Text>
+                        <Text style={styles.modalDetailValue}>
+                          {selectedAppointment.medicalReport.treatmentMethod}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {selectedAppointment.medicalReport.prescription?.length > 0 && (
+                      <View style={styles.modalDetailRow}>
+                        <View style={styles.modalDetailIcon}>
+                          <Feather name="package" size={18} color="#0891b2" />
+                        </View>
+                        <View style={styles.modalDetailContent}>
+                          <Text style={styles.modalDetailLabel}>Đơn thuốc</Text>
+                          <Text style={styles.modalDetailValue}>
+                            {selectedAppointment.medicalReport.prescription.map(p => p.medicine).join("\n")}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {selectedAppointment.medicalReport.notes && (
+                      <View style={styles.modalDetailRow}>
+                        <View style={styles.modalDetailIcon}>
+                          <Feather name="file-text" size={18} color="#0891b2" />
+                        </View>
+                        <View style={styles.modalDetailContent}>
+                          <Text style={styles.modalDetailLabel}>Ghi chú thêm</Text>
+                          <Text style={styles.modalDetailValue}>
+                            {selectedAppointment.medicalReport.notes}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </>
+                )}
               </View>
 
               {selectedAppointment.status === "pending" && (
@@ -668,6 +825,30 @@ export default function DoctorScheduleScreen() {
                       Hoàn thành khám
                     </Text>
                   </TouchableOpacity>
+                </View>
+              )}
+
+              {selectedAppointment.status === "completed" && (
+                <View style={styles.modalActions}>
+                  {selectedAppointment.reportSent ? (
+                    <View style={[styles.modalActionBtn, styles.sentBadgeModal]}>
+                      <Feather name="check" size={18} color="white" />
+                      <Text style={styles.modalActionBtnText}>Đã gửi báo cáo</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.modalActionBtn, styles.approveBtn]}
+                      onPress={() => {
+                        setModalVisible(false);
+                        setLastCompletedAppointmentId(selectedAppointment.id);
+                        setReportModalVisible(true);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Feather name="mail" size={18} color="white" />
+                      <Text style={styles.modalActionBtnText}>Gửi báo cáo</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </ScrollView>
@@ -739,6 +920,126 @@ export default function DoctorScheduleScreen() {
 
       <DetailModal />
       <RejectReasonModal />
+      <Modal
+        visible={sendReportChoiceVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSendReportChoiceVisible(false)}
+      >
+        <View style={styles.rejectModalOverlay}>
+          <View style={styles.sendChoiceContent}>
+            <Text style={styles.sendChoiceTitle}>Gửi thông tin tình trạng bệnh cho bệnh nhân?</Text>
+            <Text style={styles.sendChoiceSubtitle}>
+              Bạn có muốn gửi ngay thông tin khám cho bệnh nhân này hay để sau?
+            </Text>
+
+            <View style={styles.sendChoiceActions}>
+              <TouchableOpacity
+                style={[styles.sendChoiceBtn, styles.sendChoiceLaterBtn]}
+                onPress={handleSendLater}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.sendChoiceLaterText}>Để sau</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.sendChoiceBtn, styles.sendChoiceSendBtn]}
+                onPress={handleSendNow}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.sendChoiceSendText}>Gửi ngay</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={reportModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setReportModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: "85%" }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Gửi thông tin khám</Text>
+              <TouchableOpacity
+                onPress={() => setReportModalVisible(false)}
+                style={styles.closeBtn}
+              >
+                <Feather name="x" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ paddingHorizontal: 20 }}>
+              <Text style={[styles.modalDetailLabel, { marginTop: 16 }]}>Tình trạng bệnh</Text>
+              <TextInput
+                style={styles.reportInput}
+                placeholder="Mô tả tình trạng bệnh..."
+                placeholderTextColor="#94a3b8"
+                value={medicalReport.condition}
+                onChangeText={(t) => setMedicalReport((s) => ({ ...s, condition: t }))}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+
+              <Text style={[styles.modalDetailLabel, { marginTop: 12 }]}>Phương pháp điều trị</Text>
+              <TextInput
+                style={styles.reportInput}
+                placeholder="Mô tả phương pháp điều trị..."
+                placeholderTextColor="#94a3b8"
+                value={medicalReport.treatmentMethod}
+                onChangeText={(t) => setMedicalReport((s) => ({ ...s, treatmentMethod: t }))}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+
+              <Text style={[styles.modalDetailLabel, { marginTop: 12 }]}>Đơn thuốc (tùy chọn)</Text>
+              <TextInput
+                style={styles.reportInput}
+                placeholder="Nhập đơn thuốc (ví dụ: Paracetamol 500mg, 2 viên/ngày)..."
+                placeholderTextColor="#94a3b8"
+                value={medicalReport.prescription}
+                onChangeText={(t) => setMedicalReport((s) => ({ ...s, prescription: t }))}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+
+              <Text style={[styles.modalDetailLabel, { marginTop: 12 }]}>Ghi chú thêm</Text>
+              <TextInput
+                style={styles.reportInput}
+                placeholder="Ghi chú khác (nếu có)..."
+                placeholderTextColor="#94a3b8"
+                value={medicalReport.notes}
+                onChangeText={(t) => setMedicalReport((s) => ({ ...s, notes: t }))}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+
+              <View style={styles.reportModalActions}>
+                <TouchableOpacity
+                  style={[styles.reportBtn, { backgroundColor: "#f1f5f9" }]}
+                  onPress={() => setReportModalVisible(false)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.reportBtnText, { color: "#64748b" }]}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.reportBtn, { backgroundColor: "#0891b2" }]}
+                  onPress={handleSubmitMedicalReport}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.reportBtnText, { color: "white" }]}>Gửi</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -842,13 +1143,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardBorder: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-  },
+  // cardBorder: {
+  //   position: "absolute",
+  //   left: 0,
+  //   top: 0,
+  //   bottom: 0,
+  //   width: 4,
+  // },
   topSection: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1226,5 +1527,104 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "white",
+  },
+  // Send report choice modal
+  sendChoiceContent: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 20,
+    width: "100%",
+    maxWidth: 420,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 10,
+    alignItems: "center",
+  },
+  sendChoiceTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  sendChoiceSubtitle: {
+    fontSize: 14,
+    color: "#64748b",
+    textAlign: "center",
+    marginBottom: 18,
+    lineHeight: 20,
+  },
+  sendChoiceActions: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  sendChoiceBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendChoiceLaterBtn: {
+    backgroundColor: "#f1f5f9",
+  },
+  sendChoiceSendBtn: {
+    backgroundColor: "#0891b2",
+  },
+  sendChoiceLaterText: {
+    color: "#64748b",
+    fontWeight: "600",
+  },
+  sendChoiceSendText: {
+    color: "white",
+    fontWeight: "600",
+  },
+  reportInput: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    color: "#1e293b",
+    minHeight: 80,
+    backgroundColor: "#f8fafc",
+  },
+  reportModalActions: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  reportBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reportBtnText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  sentBadge: {
+    backgroundColor: "#94a3b8",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  sentBadgeModal: {
+    backgroundColor: "#94a3b8",
+    paddingVertical: 14,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
 });

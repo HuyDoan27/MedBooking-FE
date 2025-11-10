@@ -34,6 +34,7 @@ export default function LoginScreen({
       });
 
       const { token, user } = res.data;
+      console.log("Login response:", res.data);
 
       if (!token) {
         throw new Error("Không nhận được token từ server");
@@ -157,10 +158,9 @@ export default function LoginScreen({
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
     backgroundColor: "#f0f9ff",
     padding: 24,
-    alignItems: "center",
+    paddingTop: 100,
   },
   header: {
     marginTop: 40,

@@ -34,11 +34,6 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({
                 containerStyle={styles.avatar}
                 title={getInitials(doctor.name)}
               />
-              {doctor.isOnline && (
-                <View style={styles.onlineIndicator}>
-                  <View style={styles.onlineDot} />
-                </View>
-              )}
             </View>
 
             <View style={styles.details}>
@@ -51,7 +46,6 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({
               </View>
 
               <View style={styles.priceRating}>
-                <Text style={styles.price}>{doctor.price}</Text>
                 <View style={styles.rating}>
                   <Icon name="star" size={18} color="#FBBF24" />
                   <Text style={styles.ratingText}>{doctor.rating}</Text>
@@ -74,12 +68,6 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({
             </View>
 
             <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.callButton}
-                onPress={() => onCallPress?.(doctor)}
-              >
-                <Icon name="phone" size={18} color="#4B5563" />
-              </TouchableOpacity>
               <Button
                 title="Đặt lịch"
                 buttonStyle={styles.bookButton}
@@ -96,8 +84,10 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
-    marginBottom: 16,
+    borderRadius: 10,
+    marginBottom: 5,
+    marginLeft: -10,
+    marginRight: -10,
     backgroundColor: "#FFFFFF",
     elevation: 6,
     shadowOffset: { width: 0, height: 3 },
@@ -107,15 +97,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   container: {
-    padding: 16,
+    padding: 5,
   },
   doctorInfo: {
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   avatarContainer: {
     position: "relative",
-    marginRight: 16,
+    marginRight: 10,
   },
   avatar: {
     borderWidth: 3,
@@ -164,15 +154,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6B7280",
     fontWeight: "400",
-  },
-  priceRating: {
-    alignItems: "flex-end",
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1D4ED8",
-    marginBottom: 4,
   },
   rating: {
     flexDirection: "row",
