@@ -101,9 +101,6 @@ export default function RegisterScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.logo}>
-          <Heart size={40} color="#fff" />
-        </View>
         <Text style={styles.title}>MedBooking</Text>
         <Text style={styles.subtitle}>Tạo tài khoản mới</Text>
       </View>

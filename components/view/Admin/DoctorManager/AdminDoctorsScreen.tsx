@@ -2,6 +2,7 @@ import { getAllDoctors, updateDoctorStatus } from "@/services/DoctorService";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
+import DoctorDetailModal from "./components/DoctorDetailModal";
 import {
   Alert,
   FlatList,
@@ -12,9 +13,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import Toast from "react-native-toast-message";
+import RejectModal from "./components/RejectModal";
 
 type Doctor = {
   _id: string;
@@ -53,6 +55,7 @@ export default function AdminDoctorsScreen() {
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [selectedDoctorDetail, setSelectedDoctorDetail] = useState(null);
 
   const fetchDoctors = async () => {
     try {
@@ -128,8 +131,8 @@ export default function AdminDoctorsScreen() {
           onPress: async () => {
             try {
               Toast.show({ type: "info", text1: "Đang xử lý..." });
-              const response = await updateDoctorStatus(doctor._id, 1);
-              if (response.data.success) {
+              const response = await updateDoctorStatus(doctor._id, { status: 1 });
+              if (response.success) {
                 Toast.show({
                   type: "success",
                   text1: "Thành công",
@@ -180,11 +183,14 @@ export default function AdminDoctorsScreen() {
 
       const response = await updateDoctorStatus(
         selectedDoctor._id,
-        3,
-        rejectReason.trim()
+        {
+          status: 3,
+          rejectReason: rejectReason.trim()
+        },
       );
 
-      if (response.data.success) {
+
+      if (response.success) {
         Toast.show({
           type: "success",
           text1: "Thành công",
@@ -346,17 +352,11 @@ export default function AdminDoctorsScreen() {
               <View style={styles.actionButtons}>
                 <TouchableOpacity
                   style={styles.actionButtonOutline}
+                  onPress={() => setSelectedDoctorDetail(item)}
                   activeOpacity={0.7}
                 >
                   <Feather name="eye" size={14} color="#64748b" />
                   <Text style={styles.actionButtonOutlineText}>Chi tiết</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButtonOutline}
-                  activeOpacity={0.7}
-                >
-                  <Feather name="edit-2" size={14} color="#64748b" />
-                  <Text style={styles.actionButtonOutlineText}>Sửa</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -406,65 +406,15 @@ export default function AdminDoctorsScreen() {
     );
   };
 
-  const RejectModal = () => (
-    <Modal
-      visible={rejectModalVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setRejectModalVisible(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Feather name="alert-circle" size={24} color="#ef4444" />
-            <Text style={styles.modalTitle}>Lý do từ chối</Text>
-          </View>
-
-          <Text style={styles.modalSubtitle}>
-            Vui lòng nhập lý do từ chối bác sĩ {selectedDoctor?.fullName}
-          </Text>
-
-          <TextInput
-            style={styles.rejectInput}
-            placeholder="Nhập lý do từ chối..."
-            placeholderTextColor="#94a3b8"
-            value={rejectReason}
-            onChangeText={setRejectReason}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalCancelButton]}
-              onPress={() => {
-                setRejectModalVisible(false);
-                setRejectReason("");
-                setSelectedDoctor(null);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.modalCancelText}>Hủy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.modalSubmitButton]}
-              onPress={handleRejectSubmit}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.modalSubmitText}>Xác nhận từ chối</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
 
-      <View style={styles.header}>
+      <LinearGradient
+        colors={["#0891b2", "#06b6d4"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
@@ -496,7 +446,7 @@ export default function AdminDoctorsScreen() {
             )}
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -517,9 +467,7 @@ export default function AdminDoctorsScreen() {
         </View>
       </View>
 
-      <View
-        style={styles.filterContainer}
-      >
+      <View style={styles.filterContainer}>
         <FilterTab label="Tất cả" value="all" count={stats.total} />
         <FilterTab label="Hoạt động" value={1} count={stats.active} />
         <FilterTab label="Chờ duyệt" value={2} count={stats.pending} />
@@ -548,7 +496,24 @@ export default function AdminDoctorsScreen() {
         }
       />
 
-      <RejectModal />
+      <RejectModal
+        visible={rejectModalVisible}
+        onClose={() => {
+          setRejectModalVisible(false);
+          setRejectReason("");
+          setSelectedDoctor(null);
+        }}
+        reason={rejectReason}
+        setReason={setRejectReason}
+        onSubmit={handleRejectSubmit}
+        doctorName={selectedDoctor?.fullName}
+      />
+
+      <DoctorDetailModal
+        doctor={selectedDoctorDetail}
+        visible={!!selectedDoctorDetail}
+        onClose={() => setSelectedDoctorDetail(null)}
+      />
     </View>
   );
 }
@@ -559,10 +524,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
   },
   header: {
-    backgroundColor: "#0891b2",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
-    paddingTop: 30,
+    paddingTop: 50,
     borderEndEndRadius: 16,
     borderEndStartRadius: 16,
   },

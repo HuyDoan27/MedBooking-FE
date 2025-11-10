@@ -1,34 +1,33 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  Activity,
+  Award,
+  Bell,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  Edit,
+  Heart,
+  LogOut,
+  Mail,
+  Phone,
+  Settings,
+  Shield,
+  Star,
+  User,
+} from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  Image,
-  Switch,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
   Animated,
+  Image,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import {
-  ArrowLeft,
-  User,
-  Phone,
-  Mail,
-  Bell,
-  Edit,
-  Camera,
-  ChevronRight,
-  LogOut,
-  Heart,
-  CreditCard,
-  Shield,
-  Settings,
-  Award,
-  Activity,
-  Clock,
-  Star,
-} from "lucide-react-native";
 import { getMe } from "../../../services/UserService";
+import LogoutModal from "./components/LogoutModal";
 
 const menuItems = [
   {
@@ -68,7 +67,8 @@ const menuItems = [
   },
 ];
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ visible, onClose, onLogoutSuccess }) {
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -86,27 +86,34 @@ export default function ProfileScreen() {
     }
   };
 
+  const loadUserFromStorage = async () => {
+    try {
+      setLoading(true);
+      const storedUser = await AsyncStorage.getItem("user");
+      const token = await AsyncStorage.getItem("token");
+
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else if (token) {
+        // nếu chưa có user trong storage, gọi API getMe
+        const res = await getMe();
+        setUser(res.data);
+        await AsyncStorage.setItem("user", JSON.stringify(res.data));
+      }
+    } catch (err) {
+      console.error("❌ Lỗi khi lấy thông tin user:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUserFromStorage();
+  }, []);
+
   useEffect(() => {
     fetchUser();
   }, []);
-
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [220, 90],
-    extrapolate: "clamp",
-  });
-
-  const avatarScale = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [1, 0.5],
-    extrapolate: "clamp",
-  });
-
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
 
   if (loading) {
     return (
@@ -151,9 +158,7 @@ export default function ProfileScreen() {
             </View>
           </View>
           <Text style={styles.userName}>{user.fullName}</Text>
-          <Text style={styles.userRole}>
-            {isDoctor ? "🩺 Bác sĩ" : "👤 Bệnh nhân"}
-          </Text>
+          <Text style={styles.userRole}>{user.role}</Text>
         </Animated.View>
       </Animated.View>
 
@@ -329,11 +334,21 @@ export default function ProfileScreen() {
 
         {/* Logout Button */}
         <View style={styles.sectionContainer}>
-          <TouchableOpacity style={styles.logoutButton} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            activeOpacity={0.8}
+            onPress={() => setShowLogoutModal(true)}
+          >
             <LogOut size={20} color="#dc2626" />
             <Text style={styles.logoutText}>Đăng xuất</Text>
           </TouchableOpacity>
         </View>
+
+        <LogoutModal
+          visible={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          onLogoutSuccess={onLogoutSuccess}
+        />
       </Animated.ScrollView>
     </View>
   );
@@ -363,7 +378,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "rgba(8, 145, 178, 1.00)",
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 40,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     shadowOffset: { width: 0, height: 8 },

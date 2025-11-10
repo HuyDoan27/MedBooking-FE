@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { QuickAction } from '../../../types';
+import { QuickAction } from '../../../../types';
 
 interface QuickActionsProps {
   actions?: QuickAction[];
@@ -51,10 +51,10 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 1)',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    backgroundColor: "#cccc"
   },
   iconContainer: {
     width: 48,

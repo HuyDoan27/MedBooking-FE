@@ -1,8 +1,7 @@
 // Components/Header.tsx
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Avatar, Badge } from "react-native-elements";
-import Icon from "react-native-vector-icons/Feather";
+import { StyleSheet, Text, View } from "react-native";
+import { Avatar } from "react-native-elements";
 
 interface HeaderProps {
   userName?: string;
@@ -12,10 +11,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  userName = "Minh",
+  userName = "",
   avatarUri,
-  onNotificationPress,
-  onCalendarPress,
 }) => {
   return (
     <View style={styles.container}>
@@ -28,26 +25,11 @@ export const Header: React.FC<HeaderProps> = ({
           title={userName.charAt(0).toUpperCase()}
         />
         <View style={styles.greeting}>
-          <Text style={styles.welcomeText}>Xin chào, {userName}!</Text>
+          <Text style={styles.welcomeText}>Xin chào, {userName}</Text>
           <Text style={styles.subText}>Hôm nay bạn cảm thấy thế nào?</Text>
         </View>
       </View>
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={onNotificationPress}
-        >
-          <Icon name="bell" size={20} color="white" />
-          <Badge
-            status="error"
-            containerStyle={styles.badge}
-            badgeStyle={styles.badgeStyle}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={onCalendarPress}>
-          <Icon name="calendar" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
+
     </View>
   );
 };

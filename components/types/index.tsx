@@ -14,7 +14,6 @@ export interface Doctor {
 
 export interface Specialty {
   name: string;
-  color: string;
   textColor: string;
 }
 

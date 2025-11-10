@@ -20,11 +20,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         <Text style={styles.title}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
-      {showViewAll && (
-        <TouchableOpacity onPress={onViewAllPress}>
-          <Text style={styles.viewAll}>Xem tất cả</Text>
-        </TouchableOpacity>
-      )}
+      
     </View>
   );
 };
@@ -34,7 +30,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginTop: 10,
+    marginBottom: 10,
   },
   titleContainer: {
     flex: 1,

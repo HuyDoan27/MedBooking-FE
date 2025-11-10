@@ -1,15 +1,20 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { Platform } from "react-native";
 
-// ⚠️ BASE_URL cần đổi theo môi trường
-const BASE_URL = "http://localhost:5000/api";
-// - Android Emulator: 10.0.2.2
-// - iOS Simulator: localhost
-// - Device thật: IP máy tính (vd: http://192.168.1.100:5000)
+// ⚙️ Địa chỉ IP của máy tính bạn (kiểm tra bằng ipconfig / ifconfig)
+const LOCAL_IP = "192.168.0.105"; // ⚠️ đổi thành IP thật của máy bạn
+const PORT = 5000;
+
+// ✅ Tự động chọn baseURL phù hợp
+const BASE_URL =
+  Platform.OS === "web"
+    ? `http://localhost:${PORT}/api`
+    : `http://${LOCAL_IP}:${PORT}/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
+  timeout: 10000,
 });
 
 // ✅ Gắn token tự động vào tất cả request
@@ -30,6 +35,12 @@ export const getAppointmentsByDoctor = (
     params: { date, status, patientName },
   });
 };
+
+// Lấy danh sách lịch hẹn của bác sĩ trong ngày hôm nay
+export const getTodayAppointmentsByDoctor = async (userId) => {
+  return api.get(`/appointments/today/${userId}`);
+};
+
 
 // Lấy danh sách lịch hẹn của user
 export const getUserAppointments = async (userId, params = {}) => {
@@ -70,3 +81,24 @@ export const rateAppointment = (appointmentId, data) =>
 // Lấy thống kê lịch hẹn của user
 export const getUserAppointmentStats = (userId) =>
   api.get(`/appointments/user/${userId}/stats`);
+
+// 🩺 Bác sĩ gửi thông tin khám bệnh sau khi hoàn thành lịch hẹn
+export const submitMedicalReport = async (appointmentId, data) => {
+  const token = await AsyncStorage.getItem("token");
+
+  return api.post(`/appointments/${appointmentId}/medical-report`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+// Lấy danh sách báo cáo bệnh án của một bệnh nhân (user)
+export const getMedicalReportsByPatient = async (userId) => {
+  const token = await AsyncStorage.getItem("token");
+  return api.get(`/appointments/user/${userId}/medical-reports`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
