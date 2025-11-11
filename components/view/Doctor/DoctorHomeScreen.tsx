@@ -1,29 +1,28 @@
+import { getTodayAppointmentsByDoctor, getAppointmentStatusCount } from "@/services/AppointmentService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  Bell,
   Calendar,
   CheckCircle,
+  ChevronRight,
   Clock,
   Star,
   TrendingUp,
-  ChevronRight,
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  StatusBar,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getTodayAppointmentsByDoctor } from "@/services/AppointmentService"
 
 const DoctorHomeScreen: React.FC = () => {
   const [doctorName, setDoctorName] = useState("Bác sĩ");
-  const [specialty, setSpecialty] = useState("Nội khoa");
   const [todayAppointments, setTodayAppointments] = useState([]);
+  const [statusCounts, setStatusCounts] = useState({ completed: 0, pending: 0 });
 
   useEffect(() => {
     (async () => {
@@ -36,41 +35,29 @@ const DoctorHomeScreen: React.FC = () => {
 
         const user = JSON.parse(userData);
         const doctorId = user._id || user.id;
-
-        if (!doctorId) {
-          console.warn("Thiếu ID bác sĩ");
-          return;
-        }
-
-        // Cập nhật tên bác sĩ
         setDoctorName(user.fullName || "Bác sĩ");
 
-        // Gọi API lấy lịch hôm nay — KHÔNG cần token
+        // 🔹 Lấy lịch hẹn hôm nay
         const response = await getTodayAppointmentsByDoctor(doctorId);
-
         if (response.data.success) {
           setTodayAppointments(response.data.data);
-        } else {
-          console.warn("Lỗi từ server:", response.data.message);
+        }
+
+        // 🔹 Lấy thống kê trạng thái theo bác sĩ hiện tại
+        const statusRes = await getAppointmentStatusCount();
+        if (statusRes.data.success) {
+          setStatusCounts(statusRes.data.data);
         }
       } catch (e) {
-        console.warn("Lỗi khi tải lịch hẹn:", e);
+        console.warn("Lỗi khi tải dữ liệu:", e);
       }
     })();
   }, []);
 
-  const today = new Date();
-  const weekdays = [
-    "Chủ Nhật",
-    "Thứ Hai",
-    "Thứ Ba",
-    "Thứ Tư",
-    "Thứ Năm",
-    "Thứ Sáu",
-    "Thứ Bảy",
-  ];
-  const weekday = weekdays[today.getDay()];
 
+  const today = new Date();
+  const weekdays = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+  const weekday = weekdays[today.getDay()];
   const dateStr = today.toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
@@ -78,9 +65,27 @@ const DoctorHomeScreen: React.FC = () => {
   });
 
   const todayStats = [
-    { label: "Lịch hẹn", value: todayAppointments.length.toString(), icon: Calendar, color: "#06b6d4", bg: "#ecfeff" },
-    { label: "Đã khám", value: "5", icon: CheckCircle, color: "#22c55e", bg: "#f0fdf4" },
-    { label: "Đang chờ", value: "4", icon: Clock, color: "#f97316", bg: "#fff7ed" },
+    {
+      label: "Lịch hẹn",
+      value: todayAppointments.length.toString(),
+      icon: Calendar,
+      color: "#06b6d4",
+      bg: "#ecfeff",
+    },
+    {
+      label: "Đã khám",
+      value: statusCounts.completed.toString(),
+      icon: CheckCircle,
+      color: "#22c55e",
+      bg: "#f0fdf4",
+    },
+    {
+      label: "Đang chờ",
+      value: statusCounts.pending.toString(),
+      icon: Clock,
+      color: "#f97316",
+      bg: "#fff7ed",
+    },
   ];
 
   return (
@@ -101,10 +106,6 @@ const DoctorHomeScreen: React.FC = () => {
               <Text style={styles.doctorName}>Xin chào, Bs. {doctorName}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.bellButton}>
-            <Bell size={24} color="#fff" />
-            <View style={styles.redDot} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.dateCard}>

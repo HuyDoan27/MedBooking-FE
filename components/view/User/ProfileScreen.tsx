@@ -249,7 +249,7 @@ export default function ProfileScreen({ visible, onClose, onLogoutSuccess }) {
                     {
                       icon: Clock,
                       label: "Kinh nghiệm",
-                      value: user.experience || "Chưa cập nhật",
+                      value: `${user.experience} năm` || "Chưa cập nhật",
                       color: "#f97316",
                       bg: "#ffedd5",
                     },

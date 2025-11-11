@@ -222,7 +222,7 @@ export default function EnhancedDoctorSearch() {
         >
           {/* Ảnh */}
           <Image
-            source={{ uri: item.image }}
+            source={{ uri: `https://randomuser.me/api/portraits/men/${Math.floor(Math.random() * 90)}.jpg` }}
             style={{
               width: 68,
               height: 68,
@@ -232,7 +232,6 @@ export default function EnhancedDoctorSearch() {
               marginRight: 12,
             }}
           />
-
           {/* Thông tin: Họ tên và kinh nghiệm */}
           <View style={{ flex: 1 }}>
             <Text

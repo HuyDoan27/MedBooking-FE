@@ -1,5 +1,6 @@
 import { loginUser } from "@/services/AuthService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
 import {
   ArrowRight,
   Eye,
@@ -40,22 +41,30 @@ export default function LoginScreen({
         throw new Error("Không nhận được token từ server");
       }
 
+      // Lưu thông tin
       await AsyncStorage.setItem("user", JSON.stringify(user));
       await AsyncStorage.setItem("token", token);
+      await AsyncStorage.setItem("rememberMe", rememberMe ? "true" : "false");
 
-      if (!rememberMe) {
-        // có thể lưu thêm cờ để biết người dùng không muốn auto-login
-        await AsyncStorage.setItem("rememberMe", "false");
-      } else {
-        await AsyncStorage.setItem("rememberMe", "true");
-      }
+      // ✅ Hiển thị toast thành công
+      Toast.show({
+        type: "success",
+        text1: "Đăng nhập thành công 🎉",
+        text2: `Chào mừng ${user?.firstName || "bạn"} trở lại!`,
+      });
 
-      // Gọi callback khi đăng nhập thành công
-      if (onLoginSuccess) {
-        onLoginSuccess(res.data);
-      }
+      if (onLoginSuccess) onLoginSuccess(res.data);
     } catch (error: any) {
-      console.error("Login error:", error);
+
+      // ✅ Hiển thị toast lỗi
+      Toast.show({
+        type: "error",
+        text1: "Đăng nhập thất bại ❌",
+        text2:
+          error?.response?.data?.message ||
+          error.message ||
+          "Vui lòng kiểm tra lại email hoặc mật khẩu",
+      });
     }
   };
 

@@ -2,7 +2,7 @@ import axios from "axios";
 import { Platform } from "react-native";
 
 // ⚙️ Địa chỉ IP của máy tính bạn (kiểm tra bằng ipconfig / ifconfig)
-const LOCAL_IP = "192.168.0.105"; // ⚠️ đổi thành IP thật của máy bạn
+const LOCAL_IP = "192.168.0.101"; // ⚠️ đổi thành IP thật của máy bạn
 const PORT = 5000;
 
 // ✅ Tự động chọn baseURL phù hợp

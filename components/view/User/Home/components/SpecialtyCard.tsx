@@ -49,16 +49,16 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     height: 80,
-    width: 80,            // làm vuông để ảnh fit tốt
+    width: 80,
     borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",   // tránh ảnh tràn ra ngoài
+    overflow: "hidden",
   },
 
   iconImage: {
-    width: "100%",      // chiếm toàn bộ chiều rộng của container
-    height: "100%",     // chiếm toàn bộ chiều cao của container
+    width: "100%",
+    height: "100%",
   },
 
   title: {

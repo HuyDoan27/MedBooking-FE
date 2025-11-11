@@ -157,7 +157,7 @@ export default function DoctorDetailModal({ doctor, visible, onClose }) {
                                         <Text style={styles.experienceLabel}>Kinh nghiệm</Text>
                                         <Text style={styles.experienceValue}>
                                             {typeof doctor.experience === "string"
-                                                ? doctor.experience
+                                                ? `${doctor.experience} năm`
                                                 : `${doctor.experience || 0} năm`}
                                         </Text>
                                     </View>
