@@ -1,16 +1,18 @@
 import {
   getAppointmentsByDoctor,
-  updateAppointmentStatus,
   submitMedicalReport,
+  updateAppointmentStatus,
 } from "@/services/AppointmentService";
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
+  Keyboard,
   Modal,
   ScrollView,
   StyleSheet,
@@ -18,10 +20,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  Alert,
+  Pressable
 } from "react-native";
 import Toast from "react-native-toast-message";
-
+import RejectReasonModal from "./components/RejectReasonModal";
 import "dayjs/locale/vi";
 
 dayjs.locale("vi");
@@ -524,60 +526,6 @@ export default function DoctorScheduleScreen() {
     </View>
   );
 
-  const RejectReasonModal = () => (
-    <Modal
-      visible={rejectModalVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setRejectModalVisible(false)}
-    >
-      <View style={styles.rejectModalOverlay}>
-        <View style={styles.rejectModalContent}>
-          <View style={styles.rejectModalHeader}>
-            <Feather name="alert-circle" size={24} color="#ef4444" />
-            <Text style={styles.rejectModalTitle}>Lý do từ chối</Text>
-          </View>
-
-          <Text style={styles.rejectModalSubtitle}>
-            Vui lòng nhập lý do từ chối lịch khám này
-          </Text>
-
-          <TextInput
-            style={styles.rejectReasonInput}
-            placeholder="Nhập lý do từ chối..."
-            placeholderTextColor="#94a3b8"
-            value={rejectReason}
-            onChangeText={setRejectReason}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-
-          <View style={styles.rejectModalActions}>
-            <TouchableOpacity
-              style={[styles.rejectModalBtn, styles.rejectModalCancelBtn]}
-              onPress={() => {
-                setRejectModalVisible(false);
-                setRejectReason("");
-                setPendingRejectId(null);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.rejectModalCancelText}>Hủy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.rejectModalBtn, styles.rejectModalSubmitBtn]}
-              onPress={handleRejectSubmit}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.rejectModalSubmitText}>Xác nhận từ chối</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
   const DetailModal = () => {
     if (!selectedAppointment) return null;
     const statusConfig = getStatusConfig(selectedAppointment.status);
@@ -612,8 +560,6 @@ export default function DoctorScheduleScreen() {
                     }}
                     style={styles.avatar}
                   />
-
-
                 </View>
                 <Text style={styles.modalPatientName}>
                   {selectedAppointment.patient}
@@ -919,7 +865,17 @@ export default function DoctorScheduleScreen() {
       )}
 
       <DetailModal />
-      <RejectReasonModal />
+      <RejectReasonModal
+        visible={rejectModalVisible}
+        rejectReason={rejectReason}
+        onChangeReason={setRejectReason}
+        onClose={() => {
+          setRejectModalVisible(false);
+          setRejectReason("");
+          setPendingRejectId(null);
+        }}
+        onSubmit={handleRejectSubmit}
+      />
       <Modal
         visible={sendReportChoiceVisible}
         transparent
@@ -1143,13 +1099,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  // cardBorder: {
-  //   position: "absolute",
-  //   left: 0,
-  //   top: 0,
-  //   bottom: 0,
-  //   width: 4,
-  // },
   topSection: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1456,77 +1405,106 @@ const styles = StyleSheet.create({
   // Reject Reason Modal Styles
   rejectModalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
-  rejectModalContent: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 24,
-    width: "100%",
-    maxWidth: 400,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+  // Thêm vào styles object
+  rejectModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
   },
-  rejectModalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
+  rejectModalBox: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 20,
+    maxHeight: '80%', // Thêm dòng này
+  },
+  rejectHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  rejectHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
-  rejectModalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1e293b",
+  rejectIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#fee2e2',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  rejectModalSubtitle: {
+  rejectTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  rejectCloseBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rejectBody: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  rejectLabel: {
     fontSize: 14,
-    color: "#64748b",
-    marginBottom: 20,
-    lineHeight: 20,
+    fontWeight: '500',
+    color: '#475569',
+    marginBottom: 8,
   },
-  rejectReasonInput: {
+  rejectInput: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: '#e2e8f0',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     fontSize: 15,
-    color: "#1e293b",
+    color: '#1e293b',
     minHeight: 120,
-    backgroundColor: "#f8fafc",
+    textAlignVertical: 'top',
+    backgroundColor: '#f8fafc',
   },
-  rejectModalActions: {
-    flexDirection: "row",
+  rejectFooter: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
     gap: 12,
-    marginTop: 20,
   },
-  rejectModalBtn: {
+  rejectButton: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  rejectModalCancelBtn: {
-    backgroundColor: "#f1f5f9",
+  rejectCancelButton: {
+    backgroundColor: '#f1f5f9',
   },
-  rejectModalSubmitBtn: {
-    backgroundColor: "#ef4444",
-  },
-  rejectModalCancelText: {
+  rejectCancelText: {
     fontSize: 15,
-    fontWeight: "600",
-    color: "#64748b",
+    fontWeight: '600',
+    color: '#64748b',
   },
-  rejectModalSubmitText: {
+  rejectConfirmButton: {
+    backgroundColor: '#ef4444',
+  },
+  rejectConfirmText: {
     fontSize: 15,
-    fontWeight: "600",
-    color: "white",
+    fontWeight: '600',
+    color: '#fff',
   },
   // Send report choice modal
   sendChoiceContent: {

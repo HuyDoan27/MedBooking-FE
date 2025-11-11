@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { Platform } from "react-native";
 
-const LOCAL_IP = "192.168.0.105";
+const LOCAL_IP = "192.168.0.101";
 const PORT = 5000;
 
 // ✅ Tự động chọn baseURL phù hợp

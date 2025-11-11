@@ -3,7 +3,7 @@ import axios from "axios";
 import { Platform } from "react-native";
 
 // ⚙️ Địa chỉ IP của máy tính bạn (kiểm tra bằng ipconfig / ifconfig)
-const LOCAL_IP = "192.168.0.105"; // ⚠️ đổi thành IP thật của máy bạn
+const LOCAL_IP = "192.168.0.101"; // ⚠️ đổi thành IP thật của máy bạn
 const PORT = 5000;
 
 // ✅ Tự động chọn baseURL phù hợp
@@ -97,6 +97,23 @@ export const submitMedicalReport = async (appointmentId, data) => {
 export const getMedicalReportsByPatient = async (userId) => {
   const token = await AsyncStorage.getItem("token");
   return api.get(`/appointments/user/${userId}/medical-reports`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+
+// 📊 Lấy số lượng lịch khám theo tất cả trạng thái
+export const getAppointmentStatusCount = async () => {
+  const token = await AsyncStorage.getItem("token");
+  const userData = await AsyncStorage.getItem("user");
+  if (!userData) throw new Error("Không tìm thấy thông tin người dùng");
+
+  const user = JSON.parse(userData);
+  const userId = user._id || user.id;
+
+  return api.get(`/appointments/status-count/${userId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

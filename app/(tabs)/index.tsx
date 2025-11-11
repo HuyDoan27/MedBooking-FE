@@ -26,7 +26,7 @@ import AdminDoctorsScreen from "@/components/view/Admin/DoctorManager/AdminDocto
 import AdminUserScreen from "@/components/view/Admin/UserManager/AdminUserScreen";
 
 // Icons
-import { Home, Search, Calendar, FileText, User } from "lucide-react-native";
+import { Home, Search, Calendar, FileText, User, Users } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import RegisterContainer from "@/components/view/auth/RegisterContainer";
 
@@ -202,7 +202,7 @@ export default function Page() {
         { id: "home", label: "Dashboard", icon: Home },
         { id: "clinicManager", label: "Ph.khám", icon: Calendar },
         { id: "doctorManager", label: "Bác sĩ", icon: FileText },
-        { id: "userManager", label: "User", icon: User },
+        { id: "userManager", label: "User", icon: Users },
         { id: "profile", label: "Cá nhân", icon: User },
       ],
     };
